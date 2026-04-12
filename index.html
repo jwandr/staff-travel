@@ -3,546 +3,333 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Staff Travel Route Mapper</title>
+  <title>Standby Departures</title>
 
-  <!-- Leaflet -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
   <style>
-    /* ─── Design tokens ─────────────────────────────────────── */
     :root {
-      --bg:          #f4f6f9;
-      --surface:     #ffffff;
-      --surface2:    #f0f3f7;
-      --border:      #e2e7ef;
-      --border-mid:  #cbd3e0;
-      --accent:      #2563eb;
-      --accent-dim:  #1d4ed8;
-      --accent-soft: rgba(37,99,235,0.08);
-      --accent-mid:  rgba(37,99,235,0.15);
-      --teal:        #0d9488;
-      --teal-soft:   rgba(13,148,136,0.1);
-      --text:        #1e2a3b;
-      --text-dim:    #4a5568;
-      --text-muted:  #9aa5b4;
-      --route-color: #2563eb;
-      --hub-color:   #2563eb;
-      --dest-color:  #0d9488;
-      --font-ui:     'DM Sans', sans-serif;
-      --font-mono:   'DM Mono', monospace;
-      --panel-w:     320px;
-      --radius:      8px;
-      --radius-sm:   5px;
+      --bg:           #f0f4f8;
+      --surface:      #ffffff;
+      --surface2:     #f7f9fb;
+      --border:       #e4e9f0;
+      --border-mid:   #c8d3e0;
+      --blue:         #1a6bfa;
+      --blue-dark:    #1254d4;
+      --blue-soft:    rgba(26,107,250,0.07);
+      --blue-mid:     rgba(26,107,250,0.14);
+      --green:        #059669;
+      --green-soft:   rgba(5,150,105,0.08);
+      --text:         #0f1c2e;
+      --text-dim:     #3d5166;
+      --text-muted:   #8899aa;
+      --route-staff:  #1a6bfa;
+      --route-other:  #f59e0b;
+      --hub-col:      #1a6bfa;
+      --dest-staff:   #1a6bfa;
+      --dest-other:   #f59e0b;
+      --font-ui:      'Plus Jakarta Sans', sans-serif;
+      --font-mono:    'JetBrains Mono', monospace;
+      --panel-w:      340px;
+      --r:            10px;
+      --r-sm:         6px;
     }
 
-    /* ─── Reset ─────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font-ui); }
-
-    /* ─── Layout ─────────────────────────────────────────────── */
+    html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 14px; }
     #app { display: flex; height: 100vh; width: 100vw; }
 
-    /* ─── Side panel ─────────────────────────────────────────── */
+    /* ── Panel ───────────────────────────────────────────── */
     #panel {
-      width: var(--panel-w);
-      min-width: var(--panel-w);
-      height: 100%;
-      background: var(--surface);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      z-index: 1000;
-      overflow: hidden;
-      box-shadow: 2px 0 12px rgba(0,0,0,0.06);
+      width: var(--panel-w); min-width: var(--panel-w); height: 100%;
+      background: var(--surface); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; z-index: 1000; overflow: hidden;
+      box-shadow: 3px 0 16px rgba(0,0,0,0.06);
     }
 
+    /* ── Header / Branding ───────────────────────────────── */
     #panel-header {
-      padding: 18px 18px 14px;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
-      flex-shrink: 0;
+      padding: 16px 18px 14px; border-bottom: 1px solid var(--border);
+      background: var(--surface); flex-shrink: 0;
     }
 
-    .logo-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 3px;
+    .logo-row { display: flex; align-items: center; gap: 10px; }
+
+    .logo-mark {
+      width: 34px; height: 34px; background: var(--blue); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
 
-    .logo-icon {
-      width: 26px;
-      height: 26px;
-      color: var(--accent);
-      flex-shrink: 0;
-    }
+    .logo-mark svg { width: 20px; height: 20px; fill: white; }
 
-    #panel-header h1 {
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: -0.01em;
-      color: var(--text);
-    }
+    .logo-text { display: flex; flex-direction: column; line-height: 1.1; }
+    .logo-title { font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+    .logo-sub { font-size: 10px; font-weight: 500; color: var(--text-muted); font-family: var(--font-mono); letter-spacing: 0.05em; margin-top: 1px; }
 
-    #panel-header p {
-      font-size: 11px;
-      color: var(--text-muted);
-      font-family: var(--font-mono);
-      margin-left: 36px;
-    }
-
-    /* ─── Tabs ────────────────────────────────────────────────── */
+    /* ── Tabs ────────────────────────────────────────────── */
     #tabs {
-      display: flex;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-      background: var(--bg);
-      padding: 0 12px;
-      gap: 4px;
+      display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0;
+      background: var(--bg); padding: 0 16px; gap: 2px;
     }
 
     .tab {
-      flex: 1;
-      padding: 10px 6px;
-      font-size: 12px;
-      font-weight: 500;
-      font-family: var(--font-ui);
-      color: var(--text-muted);
-      background: none;
-      border: none;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: color 0.15s, border-color 0.15s;
-      letter-spacing: 0;
+      flex: 1; padding: 10px 6px; font-size: 13px; font-weight: 600;
+      font-family: var(--font-ui); color: var(--text-muted);
+      background: none; border: none; cursor: pointer;
+      border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s;
     }
 
     .tab:hover { color: var(--text-dim); }
-    .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+    .tab.active { color: var(--blue); border-bottom-color: var(--blue); }
 
-    /* ─── Panel body ──────────────────────────────────────────── */
+    /* ── Panel body ──────────────────────────────────────── */
     #panel-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
     #panel-body::-webkit-scrollbar { width: 4px; }
-    #panel-body::-webkit-scrollbar-track { background: transparent; }
     #panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
     .tab-content { display: none; flex-direction: column; flex: 1; }
     .tab-content.active { display: flex; }
 
-    /* ─── Search box ──────────────────────────────────────────── */
-    .search-wrap {
-      padding: 14px 14px 10px;
-      flex-shrink: 0;
-    }
+    /* ── Search ──────────────────────────────────────────── */
+    .search-wrap { padding: 14px 14px 8px; flex-shrink: 0; }
 
     .search-label {
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-      display: block;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; display: block;
     }
 
     .search-input-wrap { position: relative; }
 
     .search-input {
-      width: 100%;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 8px 32px 8px 10px;
-      font-size: 13px;
-      font-family: var(--font-ui);
-      color: var(--text);
-      outline: none;
+      width: 100%; background: var(--bg); border: 1.5px solid var(--border);
+      border-radius: var(--r-sm); padding: 9px 34px 9px 11px;
+      font-size: 14px; font-family: var(--font-ui); color: var(--text); outline: none;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
 
     .search-input::placeholder { color: var(--text-muted); }
-    .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .search-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-soft); }
 
-    .search-icon {
-      position: absolute;
-      right: 9px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-muted);
-      pointer-events: none;
-      font-size: 14px;
+    .search-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; font-size: 15px; }
+
+    /* ── Controls strip (toggle + pills) ─────────────────── */
+    .controls-wrap { padding: 6px 14px 10px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
+
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; }
+
+    .toggle-label { font-size: 12px; font-weight: 600; color: var(--text-dim); }
+
+    .toggle-switch { position: relative; width: 38px; height: 22px; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0; background: var(--border-mid); border-radius: 22px;
+      cursor: pointer; transition: background 0.2s;
     }
-
-    /* ─── Filter pills ────────────────────────────────────────── */
-    .filter-wrap {
-      padding: 0 14px 10px;
-      flex-shrink: 0;
+    .toggle-slider::before {
+      content: ''; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px;
+      background: white; border-radius: 50%; transition: transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
+    .toggle-switch input:checked + .toggle-slider { background: var(--blue); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); }
 
-    .filter-label {
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-      display: block;
-    }
+    .class-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
 
-    .pills { display: flex; flex-wrap: wrap; gap: 5px; }
+    .pills { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
 
     .pill {
-      padding: 3px 10px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 500;
-      font-family: var(--font-ui);
-      border: 1px solid var(--border-mid);
-      color: var(--text-dim);
-      background: var(--surface);
-      cursor: pointer;
-      transition: all 0.15s;
+      padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      border: 1.5px solid var(--border-mid); color: var(--text-dim);
+      background: var(--surface); cursor: pointer; transition: all 0.15s;
     }
 
-    .pill:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
-    .pill.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+    .pill:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-soft); }
+    .pill.active { background: var(--blue); border-color: var(--blue); color: #fff; }
 
-    /* ─── Result list ─────────────────────────────────────────── */
-    .result-list { flex: 1; overflow-y: auto; padding: 0 0 8px; }
+    /* ── Result list ─────────────────────────────────────── */
+    .result-list { flex: 1; overflow-y: auto; }
     .result-list::-webkit-scrollbar { width: 3px; }
     .result-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-    .result-count {
-      padding: 6px 14px 4px;
-      font-size: 10px;
-      font-family: var(--font-mono);
-      color: var(--text-muted);
-    }
+    .result-count { padding: 4px 14px 4px; font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); }
 
     .result-item {
-      padding: 9px 14px;
-      cursor: pointer;
+      padding: 10px 14px; cursor: pointer;
       border-left: 3px solid transparent;
       transition: background 0.12s, border-color 0.12s;
+      display: flex; align-items: center; gap: 10px;
     }
 
-    .result-item:hover { background: var(--surface2); border-left-color: var(--accent-mid); }
-    .result-item.selected { background: var(--accent-soft); border-left-color: var(--accent); }
+    .result-item:hover { background: var(--surface2); border-left-color: var(--blue-mid); }
+    .result-item.selected { background: var(--blue-soft); border-left-color: var(--blue); }
 
-    .result-code {
-      font-family: var(--font-mono);
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--accent);
-      letter-spacing: 0.04em;
+    .result-logo {
+      width: 40px; height: 26px; flex-shrink: 0; display: flex;
+      align-items: center; justify-content: center;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 5px; overflow: hidden; padding: 2px;
     }
 
-    .result-name {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text);
-      margin-top: 1px;
-      line-height: 1.3;
-    }
+    .result-logo img { max-width: 36px; max-height: 22px; object-fit: contain; display: block; }
+    .result-logo .logo-fallback { font-size: 9px; font-weight: 700; font-family: var(--font-mono); color: var(--text-muted); }
 
-    .result-meta {
-      font-size: 10px;
-      font-family: var(--font-mono);
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
+    .result-body { flex: 1; min-width: 0; }
 
-    .result-classes {
-      display: flex;
-      gap: 4px;
-      margin-top: 5px;
-      flex-wrap: wrap;
-    }
+    .result-code { font-family: var(--font-mono); font-size: 12px; font-weight: 500; color: var(--blue); }
+    .result-name { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .result-meta { font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); margin-top: 1px; }
+
+    .result-classes { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
 
     .class-badge {
-      padding: 2px 7px;
-      border-radius: 20px;
-      font-size: 9px;
-      font-weight: 600;
-      font-family: var(--font-ui);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
+      padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700;
+      font-family: var(--font-ui); text-transform: uppercase;
     }
 
-    .class-F { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
     .class-J { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
     .class-W { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; }
     .class-Y { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
 
-    /* ─── Info panel (bottom of sidebar) ─────────────────────── */
+    /* ── Info panel ──────────────────────────────────────── */
     #info-panel {
-      border-top: 1px solid var(--border);
-      padding: 14px 16px;
-      flex-shrink: 0;
-      min-height: 100px;
-      background: var(--bg);
+      border-top: 1px solid var(--border); padding: 14px 16px;
+      flex-shrink: 0; background: var(--bg);
     }
 
-    #info-panel.empty .info-placeholder { display: block; }
+    #info-panel.empty .info-placeholder { display: flex; }
     #info-panel.empty .info-content { display: none; }
     #info-panel:not(.empty) .info-placeholder { display: none; }
     #info-panel:not(.empty) .info-content { display: block; }
 
     .info-placeholder {
-      font-size: 11px;
-      color: var(--text-muted);
-      line-height: 1.6;
+      font-size: 12px; color: var(--text-muted); line-height: 1.6;
+      align-items: center; gap: 8px;
     }
 
-    .info-title {
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 4px;
-    }
+    .info-placeholder-icon { font-size: 20px; }
 
-    .info-name {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text);
-      line-height: 1.25;
-    }
+    .info-title { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 3px; }
+    .info-name { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.2; }
+    .info-code { font-family: var(--font-mono); font-size: 11px; color: var(--blue); margin: 2px 0 8px; }
 
-    .info-code {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--accent);
-      margin-bottom: 8px;
-      margin-top: 2px;
-    }
+    .info-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
 
-    .info-stats {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-top: 8px;
-    }
+    .info-stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 8px 10px; }
+    .info-stat-label { font-size: 10px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.05em; text-transform: uppercase; }
+    .info-stat-val { font-size: 22px; font-weight: 800; color: var(--blue); font-family: var(--font-mono); margin-top: 1px; line-height: 1; }
 
-    .info-stat-box {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 8px 10px;
-    }
-
-    .info-stat-label {
-      font-size: 9px;
-      font-weight: 600;
-      color: var(--text-muted);
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    .info-stat-val {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--accent);
-      font-family: var(--font-mono);
-      margin-top: 2px;
-      line-height: 1;
-    }
-
-    /* ─── Map ─────────────────────────────────────────────────── */
+    /* ── Map ─────────────────────────────────────────────── */
     #map-wrap { flex: 1; position: relative; overflow: hidden; }
     #map { width: 100%; height: 100%; }
-    .leaflet-container { background: #e8eef4; }
+    .leaflet-container { background: #e8eef5; }
 
-    /* ─── Map status bar ──────────────────────────────────────── */
+    /* ── Status pill ─────────────────────────────────────── */
     #map-status {
-      position: absolute;
-      top: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(255,255,255,0.95);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 6px 16px;
-      font-size: 11px;
-      font-family: var(--font-mono);
-      color: var(--text-dim);
-      z-index: 500;
-      white-space: nowrap;
-      pointer-events: none;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+      background: rgba(255,255,255,0.95); border: 1px solid var(--border);
+      border-radius: 20px; padding: 6px 16px; font-size: 12px;
+      font-family: var(--font-mono); color: var(--text-dim); z-index: 500;
+      white-space: nowrap; pointer-events: none; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
-    /* ─── Loading overlay ─────────────────────────────────────── */
+    /* ── Loading ─────────────────────────────────────────── */
     #loading-overlay {
-      position: absolute;
-      inset: 0;
-      background: #f4f6f9;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 2000;
-      transition: opacity 0.4s;
+      position: absolute; inset: 0; background: #f0f4f8;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 2000; transition: opacity 0.4s;
     }
 
     #loading-overlay.hidden { opacity: 0; pointer-events: none; }
 
-    .loading-icon {
-      font-size: 28px;
-      margin-bottom: 16px;
-      animation: spin 2s linear infinite;
-      color: var(--accent);
+    .loading-mark {
+      width: 52px; height: 52px; background: var(--blue); border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 18px; animation: pulse 1.5s ease-in-out infinite;
     }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-mark svg { width: 28px; height: 28px; fill: white; }
 
-    .loading-text {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text);
-      letter-spacing: -0.01em;
-    }
+    @keyframes pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.94); opacity: 0.8; } }
 
-    .loading-sub {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--text-muted);
-      margin-top: 6px;
-    }
+    .loading-text { font-size: 15px; font-weight: 700; color: var(--text); }
+    .loading-sub { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-top: 6px; }
 
-    .loading-bar-wrap {
-      width: 200px;
-      height: 3px;
-      background: var(--border);
-      border-radius: 2px;
-      margin-top: 16px;
-      overflow: hidden;
-    }
+    .loading-bar-wrap { width: 200px; height: 3px; background: var(--border); border-radius: 2px; margin-top: 18px; overflow: hidden; }
+    .loading-bar { height: 100%; background: var(--blue); border-radius: 2px; width: 0%; transition: width 0.3s; }
 
-    .loading-bar {
-      height: 100%;
-      background: var(--accent);
-      border-radius: 2px;
-      width: 0%;
-      transition: width 0.3s;
-    }
-
-    /* ─── Clear button ────────────────────────────────────────── */
+    /* ── Buttons ─────────────────────────────────────────── */
     #clear-btn {
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      z-index: 500;
-      background: white;
-      border: 1px solid var(--border-mid);
-      border-radius: 20px;
-      padding: 7px 16px;
-      font-size: 12px;
-      font-weight: 500;
-      font-family: var(--font-ui);
-      color: var(--text-dim);
-      cursor: pointer;
-      transition: all 0.15s;
-      display: none;
+      position: absolute; bottom: 20px; right: 20px; z-index: 500;
+      background: white; border: 1.5px solid var(--border-mid); border-radius: 20px;
+      padding: 7px 18px; font-size: 13px; font-weight: 600; font-family: var(--font-ui);
+      color: var(--text-dim); cursor: pointer; transition: all 0.15s; display: none;
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
-    #clear-btn:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 2px 12px rgba(37,99,235,0.15); }
+    #clear-btn:hover { border-color: var(--blue); color: var(--blue); box-shadow: 0 2px 12px var(--blue-mid); }
     #clear-btn.visible { display: block; }
 
-    /* ─── Legend ──────────────────────────────────────────────── */
+    /* ── Legend ──────────────────────────────────────────── */
     #legend {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      z-index: 500;
-      background: rgba(255,255,255,0.95);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 10px 14px;
-      font-size: 11px;
-      color: var(--text-dim);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      position: absolute; bottom: 20px; left: 20px; z-index: 500;
+      background: rgba(255,255,255,0.96); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 11px 14px;
+      font-size: 12px; color: var(--text-dim); box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
-    .legend-title {
-      font-size: 9px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-muted);
-      margin-bottom: 7px;
-    }
-
+    .legend-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px; }
     .legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
     .legend-row:last-child { margin-bottom: 0; }
-    .legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-    .legend-line { width: 22px; height: 2px; flex-shrink: 0; border-radius: 1px; }
+    .legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    .legend-line { width: 24px; height: 2.5px; flex-shrink: 0; border-radius: 2px; }
 
-    /* ─── Airport markers ─────────────────────────────────────── */
+    /* ── Airport markers ─────────────────────────────────── */
     .airport-marker {
       width: 8px; height: 8px; border-radius: 50%;
-      background: var(--hub-color);
-      border: 2px solid white;
-      box-shadow: 0 1px 4px rgba(37,99,235,0.4);
+      background: var(--hub-col); border: 2px solid white;
+      box-shadow: 0 1px 4px rgba(26,107,250,0.4);
     }
 
-    .airport-marker.hub {
-      width: 13px; height: 13px;
-      background: var(--hub-color);
-      border: 2px solid white;
-      box-shadow: 0 2px 8px rgba(37,99,235,0.5);
-    }
+    .airport-marker.hub { width: 13px; height: 13px; box-shadow: 0 2px 8px rgba(26,107,250,0.5); }
+    .airport-marker.dest-staff { background: var(--dest-staff); box-shadow: 0 1px 4px rgba(26,107,250,0.4); }
+    .airport-marker.dest-other { background: var(--dest-other); box-shadow: 0 1px 4px rgba(245,158,11,0.4); }
 
-    .airport-marker.dest {
-      background: var(--dest-color);
-      box-shadow: 0 1px 4px rgba(13,148,136,0.4);
-    }
-
-    /* ─── Error banner ────────────────────────────────────────── */
+    /* ── Error ───────────────────────────────────────────── */
     #error-banner {
-      display: none;
-      position: absolute;
-      top: 56px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #fff1f2;
-      border: 1px solid #fca5a5;
-      border-radius: var(--radius-sm);
-      padding: 8px 16px;
-      font-size: 11px;
-      color: #991b1b;
-      z-index: 600;
-      max-width: 420px;
-      text-align: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      display: none; position: absolute; top: 56px; left: 50%; transform: translateX(-50%);
+      background: #fff1f2; border: 1px solid #fca5a5; border-radius: var(--r-sm);
+      padding: 8px 16px; font-size: 12px; color: #991b1b; z-index: 600;
+      max-width: 440px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
     #error-banner.visible { display: block; }
 
-    /* ─── Scrollbar global ────────────────────────────────────── */
     * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
   </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- ── Side panel ──────────────────────────────────────── -->
+  <!-- ── Panel ─────────────────────────────────────────── -->
   <div id="panel">
+
     <div id="panel-header">
       <div class="logo-row">
-        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-        </svg>
-        <h1>Standby Departures</h1>
+        <div class="logo-mark">
+          <!-- Plane icon -->
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0 0 11.5 2 1.5 1.5 0 0 0 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="logo-title">Standby Departures</span>
+          <span class="logo-sub">Staff Travel Route Map</span>
+        </div>
       </div>
-      <p>Staff Travel / ID90 Network</p>
     </div>
 
     <div id="tabs">
@@ -562,14 +349,22 @@
           </div>
         </div>
 
-        <div class="filter-wrap">
-          <span class="filter-label">Filter by class available</span>
-          <div class="pills" id="class-pills">
-            <button class="pill active" data-class="all">All</button>
-            <button class="pill" data-class="F">First</button>
-            <button class="pill" data-class="J">Business</button>
-            <button class="pill" data-class="W">Prem Eco</button>
-            <button class="pill" data-class="Y">Economy</button>
+        <div class="controls-wrap">
+          <div class="toggle-row">
+            <span class="toggle-label">Show all airlines on map</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="all-airlines-toggle" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div>
+            <span class="class-label">Show routes for class</span>
+            <div class="pills" id="class-pills">
+              <button class="pill active" data-class="all">All</button>
+              <button class="pill" data-class="Y">Economy</button>
+              <button class="pill" data-class="W">Prem Eco</button>
+              <button class="pill" data-class="J">Business</button>
+            </div>
           </div>
         </div>
 
@@ -591,22 +386,24 @@
         <div class="result-list" id="airline-list"></div>
       </div>
 
-    </div><!-- /panel-body -->
+    </div>
 
-    <!-- Info panel -->
     <div id="info-panel" class="empty">
-      <div class="info-placeholder">Select an airport or airline<br/>to view routes on the map</div>
+      <div class="info-placeholder">
+        <span class="info-placeholder-icon">✈</span>
+        <span>Select an airport or airline to view routes</span>
+      </div>
       <div class="info-content">
         <div class="info-title" id="info-type-label">Selected</div>
         <div class="info-name" id="info-name"></div>
         <div class="info-code" id="info-code"></div>
         <div class="info-stats">
           <div class="info-stat-box">
-            <div class="info-stat-label">Routes shown</div>
+            <div class="info-stat-label">Routes</div>
             <div class="info-stat-val" id="info-routes">—</div>
           </div>
           <div class="info-stat-box">
-            <div class="info-stat-label">Airports reached</div>
+            <div class="info-stat-label">Airports</div>
             <div class="info-stat-val" id="info-airports">—</div>
           </div>
         </div>
@@ -614,16 +411,20 @@
     </div>
   </div>
 
-  <!-- ── Map ─────────────────────────────────────────────── -->
+  <!-- ── Map ───────────────────────────────────────────── -->
   <div id="map-wrap">
     <div id="map"></div>
 
     <div id="map-status">Loading data…</div>
 
     <div id="loading-overlay">
-      <div class="loading-icon">✦</div>
-      <div class="loading-text">Initialising Route Mapper</div>
-      <div class="loading-sub" id="loading-sub">Fetching airport data…</div>
+      <div class="loading-mark">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0 0 11.5 2 1.5 1.5 0 0 0 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/>
+        </svg>
+      </div>
+      <div class="loading-text">Standby Departures</div>
+      <div class="loading-sub" id="loading-sub">Initialising…</div>
       <div class="loading-bar-wrap"><div class="loading-bar" id="loading-bar"></div></div>
     </div>
 
@@ -632,65 +433,71 @@
     <div id="legend">
       <div class="legend-title">Legend</div>
       <div class="legend-row">
-        <div class="legend-dot" style="background:var(--amber)"></div>
-        <span>Origin / hub airport</span>
+        <div class="legend-dot" style="background:#1a6bfa"></div>
+        <span>Origin airport</span>
       </div>
       <div class="legend-row">
-        <div class="legend-dot" style="background:var(--ice)"></div>
-        <span>Destination airport</span>
+        <div class="legend-dot" style="background:#1a6bfa"></div>
+        <span>Staff travel destination</span>
       </div>
       <div class="legend-row">
-        <div class="legend-line" style="background:var(--amber)"></div>
-        <span>Route</span>
+        <div class="legend-dot" style="background:#f59e0b"></div>
+        <span>Other airline destination</span>
+      </div>
+      <div class="legend-row">
+        <div class="legend-line" style="background:#1a6bfa"></div>
+        <span>Staff travel route</span>
+      </div>
+      <div class="legend-row">
+        <div class="legend-line" style="background:#f59e0b; opacity:0.7"></div>
+        <span>Other airline route</span>
       </div>
     </div>
 
-    <button id="clear-btn" onclick="clearSelection()">✕ Clear selection</button>
+    <button id="clear-btn" onclick="clearSelection()">✕ Clear</button>
   </div>
 
 </div>
-
 <script>
-/* ═══════════════════════════════════════════════════════════
-   CONFIGURATION
-   ═══════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   CONFIG
+   ═══════════════════════════════════════════════════════ */
 const CONFIG = {
   permittedAirlinesPath: './data/permitted_airlines.json',
-  // OurAirports via GitHub Pages CDN — CORS-safe
   airportsCsvUrl: 'https://davidmegginson.github.io/ourairports-data/airports.csv',
-  // Route data — served from your own repo (no CORS issues, fastest load)
-  // See README for how to download/update this file
   routeDataUrl: './data/airline_routes.json',
+  logoBase: 'https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/',
 };
 
-/* ═══════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════
    STATE
-   ═══════════════════════════════════════════════════════════ */
-let airports          = {};  // { IATA: { name, city, country, lat, lon, type } }
-let routeData         = {};  // raw Jonty data: { ORIGIN: { DEST: { airlines:[..], ... } } }
-let permittedAirlines = [];  // array from permitted_airlines.json
-let permittedMap      = {};  // { iata_code: airline_obj }
+   ═══════════════════════════════════════════════════════ */
+let airports          = {};
+let routeData         = {};
+let permittedAirlines = [];
+let permittedMap      = {};
 
-// Pre-computed indexes built once after data loads — avoids re-scanning on every interaction
-let airlineRouteIndex  = {};  // { airlineCode: [ {from, to} ] }
-let reachableByClass   = {};  // { 'all'|'F'|'J'|'W'|'Y': Set<IATA> }
+// Indexes (built once)
+let staffRouteIndex   = {};  // { airlineCode: [{from,to}] } — staff airlines only
+let allRouteIndex     = {};  // { airlineCode: [{from,to}] } — every airline in dataset
+let reachableStaff    = new Set(); // airports reachable via staff airlines
 
 let currentSelection  = null;
 let activeClassFilter = 'all';
+let showAllAirlines   = false;
 let airportSearch     = '';
 let airlineSearch     = '';
 
 let map, routeLayerGroup, markerLayerGroup;
 
-/* ═══════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════
    INIT
-   ═══════════════════════════════════════════════════════════ */
+   ═══════════════════════════════════════════════════════ */
 async function init() {
   initMap();
   setLoadingBar(5);
-
   try {
-    setLoading('Loading your permitted airlines…');
+    setLoading('Loading permitted airlines…');
     await loadPermittedAirlines();
     setLoadingBar(20);
 
@@ -698,7 +505,7 @@ async function init() {
     await loadAirports();
     setLoadingBar(55);
 
-    setLoading('Fetching route data (this is a large file — please wait)…');
+    setLoading('Fetching route data…');
     await loadRoutes();
     setLoadingBar(85);
 
@@ -708,122 +515,86 @@ async function init() {
 
     buildAirportList();
     buildAirlineList();
-
-    setTimeout(hideLoading, 500);
-    setStatus(`${Object.keys(airports).length.toLocaleString()} airports · ${permittedAirlines.length} permitted airlines loaded`);
-
+    setTimeout(hideLoading, 400);
+    setStatus(`${Object.keys(airports).length.toLocaleString()} airports · ${permittedAirlines.length} staff airlines`);
   } catch (err) {
-    console.error('Init error:', err);
-    showError(`Failed to load: ${err.message}. Open browser console (F12) for details.`);
+    console.error(err);
+    showError(`Failed to load: ${err.message}`);
     hideLoading();
   }
 }
 
-/* ═══════════════════════════════════════════════════════════
-   DATA LOADERS
-   ═══════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   LOADERS
+   ═══════════════════════════════════════════════════════ */
 async function loadPermittedAirlines() {
-  const resp = await fetch(CONFIG.permittedAirlinesPath);
-  if (!resp.ok) throw new Error(`Cannot load permitted_airlines.json (HTTP ${resp.status}). Is the file in ./data/?`);
-  const data = await resp.json();
+  const r = await fetch(CONFIG.permittedAirlinesPath);
+  if (!r.ok) throw new Error(`Cannot load permitted_airlines.json (HTTP ${r.status})`);
+  const data = await r.json();
   permittedAirlines = data.airlines || data;
   permittedAirlines.forEach(a => { permittedMap[a.iata_code] = a; });
 }
 
 async function loadAirports() {
-  const resp = await fetch(CONFIG.airportsCsvUrl);
-  if (!resp.ok) throw new Error(`Cannot fetch airports CSV (HTTP ${resp.status})`);
-  const text = await resp.text();
-  parseAirportsCsv(text);
+  const r = await fetch(CONFIG.airportsCsvUrl);
+  if (!r.ok) throw new Error(`Cannot fetch airports CSV (HTTP ${r.status})`);
+  parseAirportsCsv(await r.text());
 }
 
 function parseAirportsCsv(text) {
   const lines = text.split('\n');
-  const header = parseCsvLine(lines[0]);
   const idx = {};
-  header.forEach((h, i) => { idx[h.replace(/"/g, '').trim()] = i; });
-
+  parseCsvLine(lines[0]).forEach((h, i) => { idx[h.replace(/"/g,'').trim()] = i; });
   for (let i = 1; i < lines.length; i++) {
-    const line = lines[i];
-    if (!line.trim()) continue;
-    const cols = parseCsvLine(line);
+    if (!lines[i].trim()) continue;
+    const cols = parseCsvLine(lines[i]);
     if (!cols || cols.length < 8) continue;
-
     const type  = clean(cols[idx['type']]);
     const sched = clean(cols[idx['scheduled_service']]);
     const iata  = clean(cols[idx['iata_code']]);
     const lat   = parseFloat(cols[idx['latitude_deg']]);
     const lon   = parseFloat(cols[idx['longitude_deg']]);
-
     if (!iata || iata.length < 2 || iata === '0') continue;
     if (sched !== 'yes' && sched !== '1') continue;
-    if (!['large_airport', 'medium_airport', 'small_airport'].includes(type)) continue;
+    if (!['large_airport','medium_airport','small_airport'].includes(type)) continue;
     if (isNaN(lat) || isNaN(lon)) continue;
-
-    airports[iata] = {
-      name:    clean(cols[idx['name']]),
-      city:    clean(cols[idx['municipality']]),
-      country: clean(cols[idx['iso_country']]),
-      lat, lon, type,
-    };
+    airports[iata] = { name: clean(cols[idx['name']]), city: clean(cols[idx['municipality']]), country: clean(cols[idx['iso_country']]), lat, lon, type };
   }
-  console.log(`Loaded ${Object.keys(airports).length} airports`);
 }
 
-function clean(s) {
-  return (s || '').replace(/^"|"$/g, '').trim();
-}
+function clean(s) { return (s||'').replace(/^"|"$/g,'').trim(); }
 
 function parseCsvLine(line) {
-  const result = [];
-  let cur = '', inQ = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
+  const r = []; let cur = '', inQ = false;
+  for (const c of line) {
     if (c === '"') { inQ = !inQ; }
-    else if (c === ',' && !inQ) { result.push(cur); cur = ''; }
+    else if (c === ',' && !inQ) { r.push(cur); cur = ''; }
     else { cur += c; }
   }
-  result.push(cur);
-  return result;
+  r.push(cur); return r;
 }
 
 async function loadRoutes() {
-  const resp = await fetch(CONFIG.routeDataUrl);
-  if (!resp.ok) throw new Error(`Cannot fetch route data (HTTP ${resp.status}). Check CORS / network.`);
-  routeData = await resp.json();
-  console.log(`Loaded route data for ${Object.keys(routeData).length} origin airports`);
+  const r = await fetch(CONFIG.routeDataUrl);
+  if (!r.ok) throw new Error(`Cannot fetch route data (HTTP ${r.status})`);
+  routeData = await r.json();
 }
 
-/* ═══════════════════════════════════════════════════════════
-   INDEX BUILDER — run once after all data is loaded
-   This pre-computes everything so UI interactions are instant.
-   ═══════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   INDEX BUILDER
+   ═══════════════════════════════════════════════════════ */
 function buildIndexes() {
   const permittedCodes = new Set(permittedAirlines.map(a => a.iata_code));
 
-  // The routeData structure is:
-  // { "SYD": { iata, name, city_name, latitude, longitude, routes: [ { iata: "MEL", carriers: [{iata:"QF", name:"Qantas"}], km, min } ] } }
-
-  // Supplement airports dict with any airports from routeData not in OurAirports CSV
+  // Supplement airports from routeData
   Object.values(routeData).forEach(ap => {
-    const iata = ap.iata;
-    if (!iata) return;
-    if (!airports[iata]) {
-      const lat = parseFloat(ap.latitude);
-      const lon = parseFloat(ap.longitude);
-      if (!isNaN(lat) && !isNaN(lon)) {
-        airports[iata] = {
-          name:    ap.name       || iata,
-          city:    ap.city_name  || '',
-          country: ap.country    || '',
-          lat, lon,
-          type: 'small_airport',
-        };
-      }
-    }
+    if (!ap.iata || airports[ap.iata]) return;
+    const lat = parseFloat(ap.latitude), lon = parseFloat(ap.longitude);
+    if (!isNaN(lat) && !isNaN(lon))
+      airports[ap.iata] = { name: ap.name||ap.iata, city: ap.city_name||'', country: ap.country||'', lat, lon, type:'small_airport' };
   });
 
-  // Build airlineRouteIndex: { airlineIata: [ {from, to} ] }
+  // Build BOTH indexes from routeData
   Object.values(routeData).forEach(ap => {
     const from = ap.iata;
     if (!from || !Array.isArray(ap.routes)) return;
@@ -832,83 +603,61 @@ function buildIndexes() {
       if (!to || !Array.isArray(route.carriers)) return;
       route.carriers.forEach(carrier => {
         const code = carrier.iata;
-        if (!code || !permittedCodes.has(code)) return;
-        if (!airlineRouteIndex[code]) airlineRouteIndex[code] = [];
-        airlineRouteIndex[code].push({ from, to });
-      });
-    });
-  });
-
-  console.log('Airline route index built for:', Object.keys(airlineRouteIndex));
-  Object.entries(airlineRouteIndex).forEach(([code, routes]) => {
-    console.log(`  ${code}: ${routes.length} routes`);
-  });
-
-  // Build reachableByClass sets
-  const classKeys = ['all', 'F', 'J', 'W', 'Y'];
-  classKeys.forEach(cls => { reachableByClass[cls] = new Set(); });
-
-  permittedAirlines.forEach(airline => {
-    const code    = airline.iata_code;
-    const classes = airline.permitted_classes || [];
-    const routes  = airlineRouteIndex[code] || [];
-    routes.forEach(({ from, to }) => {
-      reachableByClass['all'].add(from);
-      reachableByClass['all'].add(to);
-      classes.forEach(cls => {
-        if (reachableByClass[cls]) {
-          reachableByClass[cls].add(from);
-          reachableByClass[cls].add(to);
+        if (!code) return;
+        // All airlines index
+        if (!allRouteIndex[code]) allRouteIndex[code] = [];
+        allRouteIndex[code].push({ from, to });
+        // Staff index
+        if (permittedCodes.has(code)) {
+          if (!staffRouteIndex[code]) staffRouteIndex[code] = [];
+          staffRouteIndex[code].push({ from, to });
         }
       });
     });
   });
 
-  console.log(`Reachable airports: all=${reachableByClass['all'].size}, F=${reachableByClass['F'].size}, J=${reachableByClass['J'].size}, W=${reachableByClass['W'].size}, Y=${reachableByClass['Y'].size}`);
-}
-
-/* ═══════════════════════════════════════════════════════════
-   MAP SETUP
-   ═══════════════════════════════════════════════════════════ */
-function initMap() {
-  map = L.map('map', {
-    center: [20, 0],
-    zoom: 2,
-    zoomControl: true,
-    minZoom: 2,
-    maxZoom: 12,
-    worldCopyJump: true,
+  // Build reachableStaff — airports reachable via any staff airline
+  permittedAirlines.forEach(al => {
+    (staffRouteIndex[al.iata_code] || []).forEach(({from, to}) => {
+      reachableStaff.add(from); reachableStaff.add(to);
+    });
   });
 
-  // Light tile layer with English-only labels — CARTO Voyager
+  console.log('Staff route index:', Object.fromEntries(Object.entries(staffRouteIndex).map(([k,v])=>[k,v.length])));
+}
+
+/* ═══════════════════════════════════════════════════════
+   MAP SETUP
+   ═══════════════════════════════════════════════════════ */
+function initMap() {
+  map = L.map('map', { center:[20,0], zoom:2, zoomControl:true, minZoom:2, maxZoom:12, worldCopyJump:true });
   L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
-    subdomains: 'abcd',
-    maxZoom: 20,
+    subdomains: 'abcd', maxZoom: 20,
   }).addTo(map);
-
   routeLayerGroup  = L.layerGroup().addTo(map);
   markerLayerGroup = L.layerGroup().addTo(map);
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════
    LIST BUILDERS
-   ═══════════════════════════════════════════════════════════ */
+   ═══════════════════════════════════════════════════════ */
 function buildAirportList() {
-  const query    = airportSearch.toLowerCase().trim();
-  const reachable = reachableByClass[activeClassFilter] || new Set();
+  const query = airportSearch.toLowerCase().trim();
+  const list  = document.getElementById('airport-list');
+  const count = document.getElementById('airport-count');
 
-  // If no search query, only show airports in reachable set (could be large)
-  // If there IS a query, search all airports we know about (user might search any airport)
+  // Airport list always shows all staff-reachable airports (class filter affects map, not list)
   let items;
-  if (query.length === 0) {
-    // Show all reachable airports, sorted by city
-    items = Array.from(reachable)
+  if (!query) {
+    items = Array.from(reachableStaff)
       .map(iata => [iata, airports[iata]])
-      .filter(([, ap]) => ap != null)
+      .filter(([, ap]) => ap)
       .sort((a, b) => a[1].city.localeCompare(b[1].city));
+    count.textContent = `${items.length.toLocaleString()} airports served by staff airlines`;
   } else {
-    // Search ALL loaded airports matching the query
+    // Prioritise: exact IATA match → starts-with IATA → staff reachable → then rest
+    const q = query.toUpperCase();
     items = Object.entries(airports)
       .filter(([iata, ap]) =>
         iata.toLowerCase().includes(query) ||
@@ -916,49 +665,42 @@ function buildAirportList() {
         ap.city.toLowerCase().includes(query)
       )
       .sort((a, b) => {
-        // Boost airports that are reachable to top
-        const aR = reachable.has(a[0]) ? 0 : 1;
-        const bR = reachable.has(b[0]) ? 0 : 1;
-        if (aR !== bR) return aR - bR;
-        return a[1].city.localeCompare(b[1].city);
+        const [ia, aa] = a, [ib, ab] = b;
+        // Exact IATA first
+        if (ia === q && ib !== q) return -1;
+        if (ib === q && ia !== q) return 1;
+        // Starts-with IATA second
+        const aStarts = ia.startsWith(q) ? 0 : 1;
+        const bStarts = ib.startsWith(q) ? 0 : 1;
+        if (aStarts !== bStarts) return aStarts - bStarts;
+        // Staff-reachable third
+        const aStaff = reachableStaff.has(ia) ? 0 : 1;
+        const bStaff = reachableStaff.has(ib) ? 0 : 1;
+        if (aStaff !== bStaff) return aStaff - bStaff;
+        return aa.city.localeCompare(ab.city);
       });
-  }
-
-  const list  = document.getElementById('airport-list');
-  const count = document.getElementById('airport-count');
-
-  if (query.length === 0) {
-    count.textContent = `${items.length.toLocaleString()} airports served by your airlines`;
-  } else {
-    const reachCount = items.filter(([iata]) => reachable.has(iata)).length;
-    count.textContent = `${items.length} results (${reachCount} served by your airlines)`;
+    const staffCount = items.filter(([iata]) => reachableStaff.has(iata)).length;
+    count.textContent = `${items.length} results · ${staffCount} staff-reachable`;
   }
 
   list.innerHTML = '';
+  if (!items.length) { list.innerHTML = '<div style="padding:14px;color:var(--text-muted);font-size:12px">No airports found</div>'; return; }
 
-  if (items.length === 0) {
-    list.innerHTML = '<div style="padding:16px;font-size:11px;color:#5a6e8a;font-family:var(--font-mono)">No airports found</div>';
-    return;
-  }
-
-  // Render only first 200 for performance; search narrows it down
   const toRender = items.slice(0, 200);
   toRender.forEach(([iata, ap]) => {
-    const isReachable = reachable.has(iata);
-    const isSelected  = currentSelection?.type === 'airport' && currentSelection?.id === iata;
+    const isStaff    = reachableStaff.has(iata);
+    const isSelected = currentSelection?.type === 'airport' && currentSelection?.id === iata;
     const div = document.createElement('div');
     div.className = 'result-item' + (isSelected ? ' selected' : '');
-    if (!isReachable) div.style.opacity = '0.45';
+    if (!isStaff) div.style.opacity = '0.5';
     div.innerHTML = `
-      <div class="result-code">${iata}</div>
-      <div class="result-name">${ap.name}</div>
-      <div class="result-meta">${ap.city}${ap.city && ap.country ? ' · ' : ''}${ap.country}${!isReachable ? ' · <em>not served</em>' : ''}</div>
-    `;
+      <div class="result-body">
+        <div class="result-code">${iata}</div>
+        <div class="result-name">${ap.name}</div>
+        <div class="result-meta">${ap.city}${ap.city&&ap.country?' · ':''}${ap.country}${!isStaff?' · not on staff network':''}</div>
+      </div>`;
     div.addEventListener('click', () => {
-      if (!isReachable) {
-        setStatus(`No permitted airlines serve ${iata} — try a different airport`);
-        return;
-      }
+      if (!isStaff) { setStatus(`${iata} is not on your staff travel network`); return; }
       selectAirport(iata, ap);
     });
     list.appendChild(div);
@@ -966,8 +708,8 @@ function buildAirportList() {
 
   if (items.length > 200) {
     const note = document.createElement('div');
-    note.style.cssText = 'padding:10px 16px;font-size:9px;color:#5a6e8a;font-family:var(--font-mono)';
-    note.textContent = `+ ${items.length - 200} more — type to narrow results`;
+    note.style.cssText = 'padding:8px 14px;font-size:11px;color:var(--text-muted);font-family:var(--font-mono)';
+    note.textContent = `+ ${items.length-200} more — refine search to narrow results`;
     list.appendChild(note);
   }
 }
@@ -975,230 +717,227 @@ function buildAirportList() {
 function buildAirlineList() {
   const query = airlineSearch.toLowerCase().trim();
   let items = permittedAirlines
-    .filter(a => {
-      if (!query) return true;
-      return a.iata_code.toLowerCase().includes(query) ||
-             a.airline_name.toLowerCase().includes(query);
-    })
+    .filter(a => !query || a.iata_code.toLowerCase().includes(query) || a.airline_name.toLowerCase().includes(query))
     .sort((a, b) => a.airline_name.localeCompare(b.airline_name));
 
   const list  = document.getElementById('airline-list');
   const count = document.getElementById('airline-count');
-  count.textContent = `${items.length} of ${permittedAirlines.length} permitted airlines`;
+  count.textContent = `${items.length} of ${permittedAirlines.length} staff airlines`;
 
   list.innerHTML = '';
-
-  if (items.length === 0) {
-    list.innerHTML = '<div style="padding:16px;font-size:11px;color:#5a6e8a;font-family:var(--font-mono)">No airlines found</div>';
-    return;
-  }
+  if (!items.length) { list.innerHTML = '<div style="padding:14px;color:var(--text-muted);font-size:12px">No airlines found</div>'; return; }
 
   items.forEach(al => {
-    const isSelected = currentSelection?.type === 'airline' && currentSelection?.id === al.iata_code;
-    const routeCount = (airlineRouteIndex[al.iata_code] || []).length;
+    const isSelected  = currentSelection?.type === 'airline' && currentSelection?.id === al.iata_code;
+    const routeCount  = (staffRouteIndex[al.iata_code] || []).length;
+    const classes     = (al.permitted_classes || []).filter(c => c !== 'F');
     const div = document.createElement('div');
     div.className = 'result-item' + (isSelected ? ' selected' : '');
-    const classes = (al.permitted_classes || []).map(c => `<span class="class-badge class-${c}">${classLabel(c)}</span>`).join('');
+
+    const logoUrl = `${CONFIG.logoBase}${al.iata_code}.svg`;
     div.innerHTML = `
-      <div class="result-code">${al.iata_code}</div>
-      <div class="result-name">${al.airline_name}</div>
-      <div class="result-meta">${al.country || ''}${routeCount ? ` · ${routeCount.toLocaleString()} routes` : ' · no routes in dataset'}</div>
-      <div class="result-classes">${classes}</div>
-    `;
+      <div class="result-logo">
+        <img src="${logoUrl}" alt="${al.iata_code}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+        <span class="logo-fallback" style="display:none">${al.iata_code}</span>
+      </div>
+      <div class="result-body">
+        <div class="result-code">${al.iata_code}</div>
+        <div class="result-name">${al.airline_name}</div>
+        <div class="result-meta">${al.country||''}${routeCount ? ` · ${routeCount.toLocaleString()} routes` : ' · no routes in dataset'}</div>
+        <div class="result-classes">${classes.map(c=>`<span class="class-badge class-${c}">${classLabel(c)}</span>`).join('')}</div>
+      </div>`;
     div.addEventListener('click', () => selectAirline(al));
     list.appendChild(div);
   });
 }
 
 function classLabel(c) {
-  return { F: 'First', J: 'Business', W: 'Prem Eco', Y: 'Economy' }[c] || c;
+  return { J:'Business', W:'Prem Eco', Y:'Economy' }[c] || c;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   SELECTION HANDLERS
-   ═══════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   SELECTION — AIRPORT
+   ═══════════════════════════════════════════════════════ */
 function selectAirport(iata, ap) {
-  currentSelection = { type: 'airport', id: iata };
+  currentSelection = { type:'airport', id:iata };
   clearLayers();
   rebuildLists();
-
-  // Read routes directly from routeData[iata].routes
-  // Structure: { iata, routes: [ { iata: destIATA, carriers: [{iata, name}], km, min } ] }
-  const destMap = {}; // dest IATA -> array of permitted airline names
-  let routeCount = 0;
 
   const entry = routeData[iata];
-  if (entry && Array.isArray(entry.routes)) {
-    entry.routes.forEach(route => {
-      const to = route.iata;
-      if (!to || !airports[to]) return;
-      const permittedCarriers = (route.carriers || [])
-        .filter(c => permittedMap[c.iata])
-        .map(c => permittedMap[c.iata].airline_name);
-      if (permittedCarriers.length === 0) return;
-      destMap[to] = permittedCarriers;
-      routeCount++;
-    });
-  }
-
-  const destSet = new Set(Object.keys(destMap));
-
-  // Draw hub
-  addMarker(ap.lat, ap.lon, iata, `<b>${iata}</b> — ${ap.name}<br/>${ap.city}, ${ap.country}`, true, false);
-
-  // Draw routes and destination markers
-  Object.entries(destMap).forEach(([dest, airlines]) => {
-    const destAp = airports[dest];
-    if (!destAp) return;
-    drawRoute(ap.lat, ap.lon, destAp.lat, destAp.lon);
-    addMarker(destAp.lat, destAp.lon, dest,
-      `<b>${dest}</b> — ${destAp.name}<br/><small>${airlines.join(', ')}</small>`,
-      false, true);
-  });
-
-  updateInfoPanel({
-    type: 'Airport',
-    name: ap.name,
-    code: `${iata} · ${ap.city}, ${ap.country}`,
-    routes: routeCount,
-    airports: destSet.size,
-  });
-
-  fitToPoints(ap.lat, ap.lon, destSet);
-  document.getElementById('clear-btn').classList.add('visible');
-}
-
-function selectAirline(al) {
-  currentSelection = { type: 'airline', id: al.iata_code };
-  clearLayers();
-  rebuildLists();
-
-  const routes = airlineRouteIndex[al.iata_code] || [];
-
-  if (routes.length === 0) {
-    setStatus(`No routes found for ${al.airline_name} in dataset`);
-    updateInfoPanel({ type: 'Airline', name: al.airline_name, code: al.iata_code, routes: 0, airports: 0 });
+  if (!entry || !Array.isArray(entry.routes)) {
+    updateInfoPanel({ type:'Airport', name:ap.name, code:`${iata} · ${ap.city}`, routes:0, airports:0 });
     document.getElementById('clear-btn').classList.add('visible');
     return;
   }
 
-  const allAirportCodes = new Set();
+  // Determine class filter — which staff airline codes qualify
+  const eligibleStaffCodes = new Set(
+    activeClassFilter === 'all'
+      ? permittedAirlines.map(a => a.iata_code)
+      : permittedAirlines.filter(a => (a.permitted_classes||[]).includes(activeClassFilter)).map(a => a.iata_code)
+  );
+
+  const staffDests = {};   // dest -> [airline names]
+  const otherDests = {};   // dest -> true (only when showAllAirlines)
+
+  entry.routes.forEach(route => {
+    const to = route.iata;
+    if (!to || !airports[to]) return;
+
+    const staffCarriers = (route.carriers||[]).filter(c => eligibleStaffCodes.has(c.iata));
+    const otherCarriers = showAllAirlines
+      ? (route.carriers||[]).filter(c => !permittedMap[c.iata])
+      : [];
+
+    if (staffCarriers.length > 0) {
+      staffDests[to] = staffCarriers.map(c => c.name);
+    } else if (otherCarriers.length > 0) {
+      otherDests[to] = true;
+    }
+  });
+
+  // Hub marker
+  addMarker(ap.lat, ap.lon, iata, `<b>${iata}</b> — ${ap.name}<br/>${ap.city}`, 'hub');
+
+  const allDests = new Set([...Object.keys(staffDests), ...Object.keys(otherDests)]);
+
+  Object.keys(staffDests).forEach(dest => {
+    const destAp = airports[dest];
+    if (!destAp) return;
+    drawRoute(ap.lat, ap.lon, destAp.lat, destAp.lon, true);
+    addMarker(destAp.lat, destAp.lon, dest, `<b>${dest}</b> — ${destAp.name}<br/><small>${staffDests[dest].join(', ')}</small>`, 'dest-staff');
+  });
+
+  Object.keys(otherDests).forEach(dest => {
+    if (staffDests[dest]) return; // already drawn as staff
+    const destAp = airports[dest];
+    if (!destAp) return;
+    drawRoute(ap.lat, ap.lon, destAp.lat, destAp.lon, false);
+    addMarker(destAp.lat, destAp.lon, dest, `<b>${dest}</b> — ${destAp.name}<br/><small>Non-staff airline</small>`, 'dest-other');
+  });
+
+  updateInfoPanel({ type:'Airport', name:ap.name, code:`${iata} · ${ap.city}, ${ap.country}`, routes:Object.keys(staffDests).length, airports:allDests.size });
+  fitToPoints(ap.lat, ap.lon, allDests);
+  document.getElementById('clear-btn').classList.add('visible');
+}
+
+/* ═══════════════════════════════════════════════════════
+   SELECTION — AIRLINE
+   ═══════════════════════════════════════════════════════ */
+function selectAirline(al) {
+  currentSelection = { type:'airline', id:al.iata_code };
+  clearLayers();
+  rebuildLists();
+
+  // Class filter: which routes qualify for this airline?
+  const classOk = activeClassFilter === 'all' || (al.permitted_classes||[]).includes(activeClassFilter);
+  const routes   = classOk ? (staffRouteIndex[al.iata_code] || []) : [];
+
+  const allCodes = new Set();
   let drawn = 0;
 
   routes.forEach(({ from, to }) => {
-    const fromAp = airports[from];
-    const toAp   = airports[to];
+    const fromAp = airports[from], toAp = airports[to];
     if (!fromAp || !toAp) return;
-
-    drawRoute(fromAp.lat, fromAp.lon, toAp.lat, toAp.lon);
-
-    if (!allAirportCodes.has(from)) {
-      addMarker(fromAp.lat, fromAp.lon, from, `<b>${from}</b> — ${fromAp.name}`, true, false);
-      allAirportCodes.add(from);
-    }
-    if (!allAirportCodes.has(to)) {
-      addMarker(toAp.lat, toAp.lon, to, `<b>${to}</b> — ${toAp.name}`, false, true);
-      allAirportCodes.add(to);
-    }
+    drawRoute(fromAp.lat, fromAp.lon, toAp.lat, toAp.lon, true);
+    if (!allCodes.has(from)) { addMarker(fromAp.lat, fromAp.lon, from, `<b>${from}</b> — ${fromAp.name}`, 'hub'); allCodes.add(from); }
+    if (!allCodes.has(to))   { addMarker(toAp.lat, toAp.lon, to, `<b>${to}</b> — ${toAp.name}`, 'dest-staff'); allCodes.add(to); }
     drawn++;
   });
 
-  updateInfoPanel({
-    type: 'Airline',
-    name: al.airline_name,
-    code: `${al.iata_code}${al.country ? ' · ' + al.country : ''}`,
-    routes: drawn,
-    airports: allAirportCodes.size,
-  });
+  updateInfoPanel({ type:'Airline', name:al.airline_name, code:`${al.iata_code}${al.country?' · '+al.country:''}`, routes:drawn, airports:allCodes.size });
+
+  // Auto-zoom to fit airline network
+  if (allCodes.size > 0) {
+    const pts = Array.from(allCodes).map(iata => airports[iata]).filter(Boolean).map(a => [a.lat, a.lon]);
+    if (pts.length > 1) {
+      try { map.fitBounds(L.latLngBounds(pts), { padding:[50,50], maxZoom:7 }); } catch(e){}
+    }
+  }
 
   document.getElementById('clear-btn').classList.add('visible');
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════
    MAP DRAWING
-   ═══════════════════════════════════════════════════════════ */
-function makeMarkerIcon(isHub, isDest) {
-  const cls = 'airport-marker' + (isHub ? ' hub' : '') + (isDest ? ' dest' : '');
-  const size = isHub ? [12, 12] : [8, 8];
-  return L.divIcon({ className: '', html: `<div class="${cls}"></div>`, iconSize: size, iconAnchor: [size[0]/2, size[1]/2] });
+   ═══════════════════════════════════════════════════════ */
+function makeMarkerIcon(type) {
+  const cls = 'airport-marker ' + type;
+  const size = type === 'hub' ? [13,13] : [9,9];
+  return L.divIcon({ className:'', html:`<div class="${cls}"></div>`, iconSize:size, iconAnchor:[size[0]/2,size[1]/2] });
 }
 
-function addMarker(lat, lon, code, popupHtml, isHub = false, isDest = false) {
-  const m = L.marker([lat, lon], {
-    icon: makeMarkerIcon(isHub, isDest),
-    zIndexOffset: isHub ? 1000 : 0,
-  });
-  m.bindPopup(popupHtml);
-  m.addTo(markerLayerGroup);
+function addMarker(lat, lon, code, popupHtml, type='hub') {
+  L.marker([lat,lon], { icon:makeMarkerIcon(type), zIndexOffset: type==='hub'?1000:0 })
+   .bindPopup(popupHtml)
+   .addTo(markerLayerGroup);
 }
 
-function drawRoute(lat1, lon1, lat2, lon2) {
-  const pts      = gcPoints(lat1, lon1, lat2, lon2, 40);
-  const segments = splitAtAntimeridian(pts);
-  segments.forEach(seg => {
-  L.polyline(seg, { color: '#2563eb', weight: 1.5, opacity: 0.5, smoothFactor: 1 })
-     .addTo(routeLayerGroup);
+function drawRoute(lat1, lon1, lat2, lon2, isStaff) {
+  const color   = isStaff ? '#1a6bfa' : '#f59e0b';
+  const opacity = isStaff ? 0.55 : 0.35;
+  const pts = gcPoints(lat1, lon1, lat2, lon2, 40);
+  splitAtAntimeridian(pts).forEach(seg => {
+    L.polyline(seg, { color, weight:1.6, opacity, smoothFactor:1 }).addTo(routeLayerGroup);
   });
 }
 
 function gcPoints(lat1, lon1, lat2, lon2, n) {
-  const toR = d => d * Math.PI / 180;
-  const toD = r => r * 180 / Math.PI;
-  const φ1 = toR(lat1), λ1 = toR(lon1), φ2 = toR(lat2), λ2 = toR(lon2);
-  const d = 2 * Math.asin(Math.sqrt(
-    Math.sin((φ2 - φ1) / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin((λ2 - λ1) / 2) ** 2
-  ));
-  if (d === 0) return [[lat1, lon1], [lat2, lon2]];
-  const pts = [];
-  for (let i = 0; i <= n; i++) {
-    const f = i / n;
-    const A = Math.sin((1 - f) * d) / Math.sin(d);
-    const B = Math.sin(f * d) / Math.sin(d);
-    const x = A * Math.cos(φ1) * Math.cos(λ1) + B * Math.cos(φ2) * Math.cos(λ2);
-    const y = A * Math.cos(φ1) * Math.sin(λ1) + B * Math.cos(φ2) * Math.sin(λ2);
-    const z = A * Math.sin(φ1) + B * Math.sin(φ2);
-    pts.push([toD(Math.atan2(z, Math.sqrt(x * x + y * y))), toD(Math.atan2(y, x))]);
+  const toR = d => d*Math.PI/180, toD = r => r*180/Math.PI;
+  const φ1=toR(lat1),λ1=toR(lon1),φ2=toR(lat2),λ2=toR(lon2);
+  const d=2*Math.asin(Math.sqrt(Math.sin((φ2-φ1)/2)**2+Math.cos(φ1)*Math.cos(φ2)*Math.sin((λ2-λ1)/2)**2));
+  if (d===0) return [[lat1,lon1],[lat2,lon2]];
+  const pts=[];
+  for (let i=0;i<=n;i++) {
+    const f=i/n, A=Math.sin((1-f)*d)/Math.sin(d), B=Math.sin(f*d)/Math.sin(d);
+    const x=A*Math.cos(φ1)*Math.cos(λ1)+B*Math.cos(φ2)*Math.cos(λ2);
+    const y=A*Math.cos(φ1)*Math.sin(λ1)+B*Math.cos(φ2)*Math.sin(λ2);
+    const z=A*Math.sin(φ1)+B*Math.sin(φ2);
+    pts.push([toD(Math.atan2(z,Math.sqrt(x*x+y*y))),toD(Math.atan2(y,x))]);
   }
   return pts;
 }
 
 function splitAtAntimeridian(pts) {
-  const segs = [[]];
-  for (let i = 0; i < pts.length; i++) {
-    segs[segs.length - 1].push(pts[i]);
-    if (i < pts.length - 1 && Math.abs(pts[i + 1][1] - pts[i][1]) > 180) segs.push([]);
+  const segs=[[]];
+  for (let i=0;i<pts.length;i++) {
+    segs[segs.length-1].push(pts[i]);
+    if (i<pts.length-1 && Math.abs(pts[i+1][1]-pts[i][1])>180) segs.push([]);
   }
-  return segs.filter(s => s.length > 1);
+  return segs.filter(s=>s.length>1);
 }
 
-function clearLayers() {
-  routeLayerGroup.clearLayers();
-  markerLayerGroup.clearLayers();
-}
+function clearLayers() { routeLayerGroup.clearLayers(); markerLayerGroup.clearLayers(); }
 
 function fitToPoints(originLat, originLon, iataSet) {
   const pts = [[originLat, originLon]];
-  iataSet.forEach(iata => { const ap = airports[iata]; if (ap) pts.push([ap.lat, ap.lon]); });
-  if (pts.length > 1) {
-    try { map.fitBounds(L.latLngBounds(pts), { padding: [50, 50], maxZoom: 7 }); } catch (e) {}
-  }
+  iataSet.forEach(iata => { const a = airports[iata]; if (a) pts.push([a.lat,a.lon]); });
+  if (pts.length > 1) { try { map.fitBounds(L.latLngBounds(pts),{padding:[50,50],maxZoom:7}); } catch(e){} }
 }
 
-/* ═══════════════════════════════════════════════════════════
-   UI HELPERS
-   ═══════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   UI
+   ═══════════════════════════════════════════════════════ */
 function clearSelection() {
   currentSelection = null;
   clearLayers();
   rebuildLists();
   document.getElementById('info-panel').className = 'empty';
   document.getElementById('clear-btn').classList.remove('visible');
-  setStatus(`${Object.keys(airports).length.toLocaleString()} airports · ${permittedAirlines.length} permitted airlines loaded`);
+  setStatus(`${Object.keys(airports).length.toLocaleString()} airports · ${permittedAirlines.length} staff airlines`);
 }
 
-function rebuildLists() {
-  buildAirportList();
-  buildAirlineList();
+function rebuildLists() { buildAirportList(); buildAirlineList(); }
+
+function redrawCurrentSelection() {
+  if (!currentSelection) return;
+  if (currentSelection.type === 'airport') {
+    const ap = airports[currentSelection.id];
+    if (ap) selectAirport(currentSelection.id, ap);
+  } else {
+    const al = permittedMap[currentSelection.id];
+    if (al) selectAirline(al);
+  }
 }
 
 function updateInfoPanel({ type, name, code, routes, airports: apCount }) {
@@ -1212,71 +951,62 @@ function updateInfoPanel({ type, name, code, routes, airports: apCount }) {
 
 function setStatus(msg) { document.getElementById('map-status').textContent = msg; }
 function setLoading(msg) { document.getElementById('loading-sub').textContent = msg; }
-function setLoadingBar(pct) { document.getElementById('loading-bar').style.width = pct + '%'; }
+function setLoadingBar(p) { document.getElementById('loading-bar').style.width = p+'%'; }
 function hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
-function showError(msg) {
-  const el = document.getElementById('error-banner');
-  el.textContent = msg;
-  el.classList.add('visible');
-}
+function showError(msg) { const e=document.getElementById('error-banner'); e.textContent=msg; e.classList.add('visible'); }
 
-/* ═══════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════
    EVENT LISTENERS
-   ═══════════════════════════════════════════════════════════ */
+   ═══════════════════════════════════════════════════════ */
 document.querySelectorAll('.tab').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
     btn.classList.add('active');
-    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
   });
 });
 
 document.getElementById('airport-search').addEventListener('input', e => {
-  airportSearch = e.target.value;
-  buildAirportList();
+  airportSearch = e.target.value; buildAirportList();
 });
 
 document.getElementById('airline-search').addEventListener('input', e => {
-  airlineSearch = e.target.value;
-  buildAirlineList();
+  airlineSearch = e.target.value; buildAirlineList();
+});
+
+document.getElementById('all-airlines-toggle').addEventListener('change', e => {
+  showAllAirlines = e.target.checked;
+  if (currentSelection) redrawCurrentSelection(); else buildAirportList();
 });
 
 document.querySelectorAll('.pill[data-class]').forEach(pill => {
   pill.addEventListener('click', () => {
-    document.querySelectorAll('.pill[data-class]').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.pill[data-class]').forEach(p=>p.classList.remove('active'));
     pill.classList.add('active');
     activeClassFilter = pill.dataset.class;
-    if (currentSelection) clearSelection();
-    else buildAirportList();
+    if (currentSelection) redrawCurrentSelection();
   });
 });
 
-/* ═══════════════════════════════════════════════════════════
-   POPUP STYLES
-   ═══════════════════════════════════════════════════════════ */
-const popupStyle = document.createElement('style');
-popupStyle.textContent = `
-  .leaflet-popup-content-wrapper {
-    background: #ffffff; border: 1px solid #e2e7ef; border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.12); color: #1e2a3b;
-    font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 0;
-  }
-  .leaflet-popup-content { margin: 10px 14px; line-height: 1.6; }
-  .leaflet-popup-tip { background: #ffffff; }
-  .leaflet-popup-close-button { color: #9aa5b4 !important; font-size: 18px !important; top: 4px !important; right: 6px !important; }
-  .leaflet-popup-content b { color: #2563eb; font-family: 'DM Mono', monospace; }
-  .leaflet-popup-content small { color: #4a5568; font-size: 11px; }
-  .leaflet-control-zoom a { background: white !important; border-color: #e2e7ef !important; color: #4a5568 !important; }
-  .leaflet-control-zoom a:hover { color: #2563eb !important; }
-  .leaflet-control-attribution { background: rgba(255,255,255,0.8) !important; color: #9aa5b4 !important; font-size: 9px !important; }
-  .leaflet-control-attribution a { color: #2563eb !important; }
+/* ═══════════════════════════════════════════════════════
+   LEAFLET STYLE OVERRIDES
+   ═══════════════════════════════════════════════════════ */
+const s = document.createElement('style');
+s.textContent = `
+  .leaflet-popup-content-wrapper { background:#fff; border:1px solid #e4e9f0; border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.1); color:#0f1c2e; font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; padding:0; }
+  .leaflet-popup-content { margin:11px 14px; line-height:1.6; }
+  .leaflet-popup-tip { background:#fff; }
+  .leaflet-popup-close-button { color:#8899aa !important; font-size:18px !important; top:5px !important; right:7px !important; }
+  .leaflet-popup-content b { color:#1a6bfa; font-family:'JetBrains Mono',monospace; }
+  .leaflet-popup-content small { color:#3d5166; font-size:12px; }
+  .leaflet-control-zoom a { background:white !important; border-color:#e4e9f0 !important; color:#3d5166 !important; font-size:16px !important; }
+  .leaflet-control-zoom a:hover { color:#1a6bfa !important; }
+  .leaflet-control-attribution { background:rgba(255,255,255,0.85) !important; color:#8899aa !important; font-size:9px !important; }
+  .leaflet-control-attribution a { color:#1a6bfa !important; }
 `;
-document.head.appendChild(popupStyle);
+document.head.appendChild(s);
 
-/* ═══════════════════════════════════════════════════════════
-   GO
-   ═══════════════════════════════════════════════════════════ */
 init();
 </script>
 </body>
