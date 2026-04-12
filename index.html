@@ -668,8 +668,9 @@ const CONFIG = {
   permittedAirlinesPath: './data/permitted_airlines.json',
   // OurAirports via GitHub Pages CDN — CORS-safe
   airportsCsvUrl: 'https://davidmegginson.github.io/ourairports-data/airports.csv',
-  // Jonty route data via jsDelivr — CORS-safe proxy for raw GitHub content
-  routeDataUrl: 'https://cdn.jsdelivr.net/gh/Jonty/airline-route-data@main/airline_routes.json',
+  // Route data — served from your own repo (no CORS issues, fastest load)
+  // See README for how to download/update this file
+  routeDataUrl: './data/airline_routes.json',
 };
 
 /* ═══════════════════════════════════════════════════════════
