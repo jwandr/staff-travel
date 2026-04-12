@@ -813,9 +813,10 @@ function initMap() {
     worldCopyJump: true,
   });
 
-  // Dark tile layer (Stadia Alidade Smooth Dark — no key needed for moderate use)
-  L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
-    attribution: '© <a href="https://stadiamaps.com/">Stadia Maps</a> © <a href="https://openstreetmap.org">OpenStreetMap</a>',
+  // Dark tile layer — CARTO Dark Matter (no API key required)
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd',
     maxZoom: 20,
   }).addTo(map);
 
