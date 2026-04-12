@@ -809,6 +809,23 @@ async function loadRoutes() {
    This pre-computes everything so UI interactions are instant.
    ═══════════════════════════════════════════════════════════ */
 function buildIndexes() {
+  // ── DIAGNOSTICS (remove after confirming data loads correctly) ──
+  const sampleOrigins = Object.keys(routeData).slice(0, 3);
+  console.log('=== ROUTE DATA DIAGNOSTICS ===');
+  console.log('Total origin airports in route data:', Object.keys(routeData).length);
+  console.log('Sample origin keys:', sampleOrigins);
+  sampleOrigins.forEach(origin => {
+    const dests = routeData[origin];
+    const destKeys = Object.keys(dests).slice(0, 2);
+    console.log(`  ${origin} → sample destinations:`, destKeys);
+    destKeys.forEach(dest => {
+      console.log(`    ${origin}→${dest}:`, JSON.stringify(dests[dest]));
+    });
+  });
+  console.log('Permitted airline codes:', permittedAirlines.map(a => a.iata_code));
+  console.log('==============================');
+  // ── END DIAGNOSTICS ──
+
   // 1. Build airlineRouteIndex: for each permitted airline, collect all its routes
   const permittedCodes = new Set(permittedAirlines.map(a => a.iata_code));
 
