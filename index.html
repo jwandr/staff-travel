@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Staff Travel Route Mapper</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── Design tokens ─────────────────────────────────────── */
+    :root {
+      --bg:         #0a0d14;
+      --surface:    #111520;
+      --surface2:   #181e2e;
+      --border:     #1f2a42;
+      --amber:      #f5a623;
+      --amber-dim:  #a06a10;
+      --amber-glow: rgba(245,166,35,0.12);
+      --ice:        #7ec8e3;
+      --ice-dim:    #3a7a94;
+      --text:       #c8d6e8;
+      --text-dim:   #5a6e8a;
+      --text-muted: #2e3d55;
+      --route:      rgba(245,166,35,0.55);
+      --route-alt:  rgba(126,200,227,0.5);
+      --font-ui:    'Syne', sans-serif;
+      --font-mono:  'Space Mono', monospace;
+      --panel-w:    320px;
+    }
+
+    /* ─── Reset ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font-ui); }
+
+    /* ─── Layout ─────────────────────────────────────────────── */
+    #app { display: flex; height: 100vh; width: 100vw; }
+
+    /* ─── Side panel ─────────────────────────────────────────── */
+    #panel {
+      width: var(--panel-w);
+      min-width: var(--panel-w);
+      height: 100%;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      z-index: 1000;
+      overflow: hidden;
+    }
+
+    #panel-header {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      flex-shrink: 0;
+    }
+
+    .logo-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    .logo-icon {
+      width: 28px;
+      height: 28px;
+      color: var(--amber);
+      flex-shrink: 0;
+    }
+
+    #panel-header h1 {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--amber);
+    }
+
+    #panel-header p {
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 0.06em;
+      font-family: var(--font-mono);
+      margin-left: 38px;
+    }
+
+    /* ─── Tabs ────────────────────────────────────────────────── */
+    #tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 11px 8px;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+      color: var(--text-dim);
+      background: none;
+      border: none;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--amber); border-bottom-color: var(--amber); }
+
+    /* ─── Panel body ──────────────────────────────────────────── */
+    #panel-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+    #panel-body::-webkit-scrollbar { width: 4px; }
+    #panel-body::-webkit-scrollbar-track { background: transparent; }
+    #panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .tab-content { display: none; flex-direction: column; flex: 1; }
+    .tab-content.active { display: flex; }
+
+    /* ─── Search box ──────────────────────────────────────────── */
+    .search-wrap {
+      padding: 14px 16px 10px;
+      flex-shrink: 0;
+    }
+
+    .search-label {
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .search-input-wrap {
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 9px 32px 9px 10px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-input::placeholder { color: var(--text-muted); }
+    .search-input:focus { border-color: var(--amber-dim); }
+
+    .search-icon {
+      position: absolute;
+      right: 9px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+      font-size: 13px;
+    }
+
+    /* ─── Filter pills ────────────────────────────────────────── */
+    .filter-wrap {
+      padding: 0 16px 10px;
+      flex-shrink: 0;
+    }
+
+    .filter-label {
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .pill {
+      padding: 3px 9px;
+      border-radius: 2px;
+      font-size: 9px;
+      font-family: var(--font-mono);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .pill:hover { border-color: var(--amber-dim); color: var(--amber); }
+    .pill.active { background: var(--amber-glow); border-color: var(--amber); color: var(--amber); }
+
+    /* ─── Result list ─────────────────────────────────────────── */
+    .result-list { flex: 1; overflow-y: auto; padding: 0 0 8px; }
+    .result-list::-webkit-scrollbar { width: 3px; }
+    .result-list::-webkit-scrollbar-thumb { background: var(--border); }
+
+    .result-count {
+      padding: 6px 16px 4px;
+      font-size: 9px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+    }
+
+    .result-item {
+      padding: 10px 16px;
+      cursor: pointer;
+      border-left: 2px solid transparent;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .result-item:hover { background: var(--surface2); border-left-color: var(--amber-dim); }
+    .result-item.selected { background: var(--amber-glow); border-left-color: var(--amber); }
+
+    .result-code {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--amber);
+      letter-spacing: 0.05em;
+    }
+
+    .result-name {
+      font-size: 11px;
+      color: var(--text);
+      margin-top: 1px;
+      line-height: 1.3;
+    }
+
+    .result-meta {
+      font-size: 9px;
+      font-family: var(--font-mono);
+      color: var(--text-dim);
+      margin-top: 3px;
+      letter-spacing: 0.04em;
+    }
+
+    .result-classes {
+      display: flex;
+      gap: 3px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+
+    .class-badge {
+      padding: 1px 5px;
+      border-radius: 2px;
+      font-size: 8px;
+      font-family: var(--font-mono);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .class-F { background: rgba(245,166,35,0.18); color: var(--amber); border: 1px solid rgba(245,166,35,0.3); }
+    .class-J { background: rgba(126,200,227,0.12); color: var(--ice); border: 1px solid rgba(126,200,227,0.25); }
+    .class-W { background: rgba(160,130,255,0.12); color: #c4b0ff; border: 1px solid rgba(160,130,255,0.25); }
+    .class-Y { background: rgba(100,200,120,0.12); color: #7dd87f; border: 1px solid rgba(100,200,120,0.25); }
+
+    /* ─── Info panel (bottom of sidebar) ─────────────────────── */
+    #info-panel {
+      border-top: 1px solid var(--border);
+      padding: 14px 16px;
+      flex-shrink: 0;
+      min-height: 90px;
+      background: var(--bg);
+    }
+
+    #info-panel.empty .info-placeholder { display: block; }
+    #info-panel.empty .info-content { display: none; }
+    #info-panel:not(.empty) .info-placeholder { display: none; }
+    #info-panel:not(.empty) .info-content { display: block; }
+
+    .info-placeholder {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .info-title {
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      margin-bottom: 6px;
+    }
+
+    .info-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    .info-code {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--amber);
+      margin-bottom: 6px;
+      margin-top: 2px;
+    }
+
+    .info-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .info-stat-label {
+      font-size: 8px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .info-stat-val {
+      font-size: 13px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: var(--ice);
+    }
+
+    /* ─── Map ─────────────────────────────────────────────────── */
+    #map-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #map { width: 100%; height: 100%; }
+
+    /* Leaflet dark tile override */
+    .leaflet-container { background: #060810; }
+
+    /* ─── Map overlays ────────────────────────────────────────── */
+    #map-status {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 7px 16px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+      z-index: 500;
+      white-space: nowrap;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    #loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      transition: opacity 0.5s;
+    }
+
+    #loading-overlay.hidden { opacity: 0; pointer-events: none; }
+
+    .loading-icon {
+      font-size: 32px;
+      margin-bottom: 16px;
+      animation: spin 2s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--amber);
+      letter-spacing: 0.12em;
+    }
+
+    .loading-sub {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-dim);
+      margin-top: 6px;
+      letter-spacing: 0.08em;
+    }
+
+    .loading-bar-wrap {
+      width: 200px;
+      height: 2px;
+      background: var(--border);
+      border-radius: 1px;
+      margin-top: 14px;
+      overflow: hidden;
+    }
+
+    .loading-bar {
+      height: 100%;
+      background: var(--amber);
+      border-radius: 1px;
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    /* ─── Clear button ────────────────────────────────────────── */
+    #clear-btn {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      z-index: 500;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 8px 16px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--text-dim);
+      cursor: pointer;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: all 0.2s;
+      display: none;
+    }
+
+    #clear-btn:hover { border-color: var(--amber-dim); color: var(--amber); }
+    #clear-btn.visible { display: block; }
+
+    /* ─── Legend ──────────────────────────────────────────────── */
+    #legend {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      z-index: 500;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 10px 14px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-dim);
+      letter-spacing: 0.06em;
+    }
+
+    .legend-title {
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 7px;
+      font-size: 8px;
+    }
+
+    .legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .legend-row:last-child { margin-bottom: 0; }
+
+    .legend-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    }
+
+    .legend-line {
+      width: 24px; height: 2px; flex-shrink: 0; border-radius: 1px;
+      opacity: 0.7;
+    }
+
+    /* ─── Custom Leaflet markers ──────────────────────────────── */
+    .airport-marker {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--amber);
+      border: 1px solid rgba(245,166,35,0.4);
+      box-shadow: 0 0 6px rgba(245,166,35,0.4);
+    }
+
+    .airport-marker.hub {
+      width: 12px;
+      height: 12px;
+      background: var(--amber);
+      border: 2px solid rgba(245,166,35,0.6);
+      box-shadow: 0 0 12px rgba(245,166,35,0.6);
+    }
+
+    .airport-marker.dest {
+      background: var(--ice);
+      border-color: rgba(126,200,227,0.4);
+      box-shadow: 0 0 6px rgba(126,200,227,0.35);
+    }
+
+    /* ─── Error banner ────────────────────────────────────────── */
+    #error-banner {
+      display: none;
+      position: absolute;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(180,30,30,0.9);
+      border: 1px solid rgba(255,80,80,0.4);
+      border-radius: 3px;
+      padding: 8px 16px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: #ffaaaa;
+      z-index: 600;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    #error-banner.visible { display: block; }
+
+    /* ─── Scrollbar global ────────────────────────────────────── */
+    * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Side panel ──────────────────────────────────────── -->
+  <div id="panel">
+    <div id="panel-header">
+      <div class="logo-row">
+        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+        <h1>Route Mapper</h1>
+      </div>
+      <p>Staff Travel / ID90 Network</p>
+    </div>
+
+    <div id="tabs">
+      <button class="tab active" data-tab="airports">✈ Airports</button>
+      <button class="tab" data-tab="airlines">◈ Airlines</button>
+    </div>
+
+    <div id="panel-body">
+
+      <!-- AIRPORT TAB -->
+      <div id="tab-airports" class="tab-content active">
+        <div class="search-wrap">
+          <span class="search-label">Search airport</span>
+          <div class="search-input-wrap">
+            <input class="search-input" id="airport-search" type="text" placeholder="Name, city or IATA code…" autocomplete="off" />
+            <span class="search-icon">⌕</span>
+          </div>
+        </div>
+
+        <div class="filter-wrap">
+          <span class="filter-label">Filter by class available</span>
+          <div class="pills" id="class-pills">
+            <button class="pill active" data-class="all">All</button>
+            <button class="pill" data-class="F">First</button>
+            <button class="pill" data-class="J">Business</button>
+            <button class="pill" data-class="W">Prem Eco</button>
+            <button class="pill" data-class="Y">Economy</button>
+          </div>
+        </div>
+
+        <div class="result-count" id="airport-count"></div>
+        <div class="result-list" id="airport-list"></div>
+      </div>
+
+      <!-- AIRLINE TAB -->
+      <div id="tab-airlines" class="tab-content">
+        <div class="search-wrap">
+          <span class="search-label">Search airline</span>
+          <div class="search-input-wrap">
+            <input class="search-input" id="airline-search" type="text" placeholder="Airline name or IATA code…" autocomplete="off" />
+            <span class="search-icon">⌕</span>
+          </div>
+        </div>
+
+        <div class="result-count" id="airline-count"></div>
+        <div class="result-list" id="airline-list"></div>
+      </div>
+
+    </div><!-- /panel-body -->
+
+    <!-- Info panel -->
+    <div id="info-panel" class="empty">
+      <div class="info-placeholder">Select an airport or airline<br/>to view routes on the map</div>
+      <div class="info-content">
+        <div class="info-title" id="info-type-label">Selected</div>
+        <div class="info-name" id="info-name"></div>
+        <div class="info-code" id="info-code"></div>
+        <div class="info-stats">
+          <div>
+            <div class="info-stat-label">Routes shown</div>
+            <div class="info-stat-val" id="info-routes">—</div>
+          </div>
+          <div>
+            <div class="info-stat-label">Airports reached</div>
+            <div class="info-stat-val" id="info-airports">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Map ─────────────────────────────────────────────── -->
+  <div id="map-wrap">
+    <div id="map"></div>
+
+    <div id="map-status">Loading data…</div>
+
+    <div id="loading-overlay">
+      <div class="loading-icon">✦</div>
+      <div class="loading-text">Initialising Route Mapper</div>
+      <div class="loading-sub" id="loading-sub">Fetching airport data…</div>
+      <div class="loading-bar-wrap"><div class="loading-bar" id="loading-bar"></div></div>
+    </div>
+
+    <div id="error-banner"></div>
+
+    <div id="legend">
+      <div class="legend-title">Legend</div>
+      <div class="legend-row">
+        <div class="legend-dot" style="background:var(--amber)"></div>
+        <span>Origin / hub airport</span>
+      </div>
+      <div class="legend-row">
+        <div class="legend-dot" style="background:var(--ice)"></div>
+        <span>Destination airport</span>
+      </div>
+      <div class="legend-row">
+        <div class="legend-line" style="background:var(--amber)"></div>
+        <span>Route</span>
+      </div>
+    </div>
+
+    <button id="clear-btn" onclick="clearSelection()">✕ Clear selection</button>
+  </div>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   CONFIGURATION — update DATA_PATH to match your repo layout
+   ═══════════════════════════════════════════════════════════ */
+const CONFIG = {
+  // Path to your permitted-airlines JSON (relative to index.html)
+  permittedAirlinesPath: './data/permitted_airlines.json',
+
+  // OurAirports CSV — fetched via jsDelivr CDN proxy (no CORS issues)
+  airportsCsvUrl: 'https://davidmegginson.github.io/ourairports-data/airports.csv',
+
+  // Jonty's airline route data
+  routeDataUrl: 'https://raw.githubusercontent.com/Jonty/airline-route-data/main/airline_routes.json',
+
+  // Only include airports with scheduled service
+  onlyScheduled: true,
+};
+
+/* ═══════════════════════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════════════════════ */
+let airports      = {};   // { IATA: { name, city, country, lat, lon } }
+let routeData     = {};   // raw Jonty data keyed by IATA
+let permittedAirlines = []; // array from permitted_airlines.json
+let permittedMap  = {};   // { IATA_code: airline_obj }
+
+let currentSelection  = null;  // { type: 'airport'|'airline', id: string }
+let activeClassFilter = 'all';
+let airportSearch     = '';
+let airlineSearch     = '';
+
+// Leaflet layers
+let map;
+let routeLayerGroup;
+let markerLayerGroup;
+
+/* ═══════════════════════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════════════════════ */
+async function init() {
+  initMap();
+  setStatus('Fetching airport data…');
+  setLoadingBar(10);
+
+  try {
+    await loadPermittedAirlines();
+    setLoadingBar(25);
+    setLoading('Fetching airport data…');
+
+    await loadAirports();
+    setLoadingBar(60);
+    setLoading('Fetching route data…');
+
+    await loadRoutes();
+    setLoadingBar(90);
+
+    buildAirportList();
+    buildAirlineList();
+    setLoadingBar(100);
+
+    setTimeout(hideLoading, 400);
+    setStatus(`${Object.keys(airports).length.toLocaleString()} airports · ${permittedAirlines.length} permitted airlines`);
+
+  } catch (err) {
+    console.error(err);
+    showError('Failed to load data. Check console. Make sure data files are accessible (CORS / path).');
+    hideLoading();
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DATA LOADERS
+   ═══════════════════════════════════════════════════════════ */
+async function loadPermittedAirlines() {
+  const resp = await fetch(CONFIG.permittedAirlinesPath);
+  if (!resp.ok) throw new Error(`Cannot load permitted airlines: ${resp.status}`);
+  const data = await resp.json();
+  permittedAirlines = data.airlines || data; // support both { airlines: [] } and []
+  permittedAirlines.forEach(a => { permittedMap[a.iata_code] = a; });
+}
+
+async function loadAirports() {
+  const resp = await fetch(CONFIG.airportsCsvUrl);
+  if (!resp.ok) throw new Error(`Cannot fetch airports CSV: ${resp.status}`);
+  const text = await resp.text();
+  parseAirportsCsv(text);
+}
+
+function parseAirportsCsv(text) {
+  const lines = text.split('\n');
+  const header = parseCsvLine(lines[0]);
+  const idx = {};
+  header.forEach((h, i) => idx[h.replace(/"/g,'')] = i);
+
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const cols = parseCsvLine(lines[i]);
+    if (!cols || cols.length < 5) continue;
+
+    const type    = (cols[idx.type] || '').replace(/"/g,'');
+    const sched   = (cols[idx.scheduled_service] || '').replace(/"/g,'');
+    const iata    = (cols[idx.iata_code] || '').replace(/"/g,'');
+    const lat     = parseFloat(cols[idx.latitude_deg]);
+    const lon     = parseFloat(cols[idx.longitude_deg]);
+
+    if (!iata || iata === '0' || iata.length < 2) continue;
+    if (CONFIG.onlyScheduled && sched !== 'yes' && sched !== '1') continue;
+    if (!['large_airport','medium_airport','small_airport'].includes(type)) continue;
+    if (isNaN(lat) || isNaN(lon)) continue;
+
+    airports[iata] = {
+      name:    (cols[idx.name] || '').replace(/"/g,''),
+      city:    (cols[idx.municipality] || '').replace(/"/g,''),
+      country: (cols[idx.iso_country] || '').replace(/"/g,''),
+      lat, lon,
+      type,
+    };
+  }
+}
+
+// Minimal CSV line parser (handles quoted fields)
+function parseCsvLine(line) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { result.push(cur); cur = ''; }
+    else { cur += c; }
+  }
+  result.push(cur);
+  return result;
+}
+
+async function loadRoutes() {
+  const resp = await fetch(CONFIG.routeDataUrl);
+  if (!resp.ok) throw new Error(`Cannot fetch route data: ${resp.status}`);
+  routeData = await resp.json();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MAP SETUP
+   ═══════════════════════════════════════════════════════════ */
+function initMap() {
+  map = L.map('map', {
+    center: [20, 0],
+    zoom: 2,
+    zoomControl: true,
+    minZoom: 2,
+    maxZoom: 10,
+    worldCopyJump: true,
+  });
+
+  // Dark tile layer (Stadia Alidade Smooth Dark — no key needed for moderate use)
+  L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
+    attribution: '© <a href="https://stadiamaps.com/">Stadia Maps</a> © <a href="https://openstreetmap.org">OpenStreetMap</a>',
+    maxZoom: 20,
+  }).addTo(map);
+
+  routeLayerGroup  = L.layerGroup().addTo(map);
+  markerLayerGroup = L.layerGroup().addTo(map);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LIST BUILDERS
+   ═══════════════════════════════════════════════════════════ */
+function buildAirportList() {
+  const query = airportSearch.toLowerCase();
+
+  // Airports reachable by permitted airlines filtered by class
+  const reachable = getReachableAirports(activeClassFilter);
+
+  let items = Object.entries(airports)
+    .filter(([iata]) => reachable.has(iata))
+    .filter(([iata, ap]) => {
+      if (!query) return true;
+      return iata.toLowerCase().includes(query)
+          || ap.name.toLowerCase().includes(query)
+          || ap.city.toLowerCase().includes(query);
+    })
+    .sort((a, b) => a[1].city.localeCompare(b[1].city));
+
+  const list  = document.getElementById('airport-list');
+  const count = document.getElementById('airport-count');
+  count.textContent = `${items.length.toLocaleString()} airports`;
+
+  list.innerHTML = '';
+  items.forEach(([iata, ap]) => {
+    const div = document.createElement('div');
+    div.className = 'result-item' + (currentSelection?.type === 'airport' && currentSelection?.id === iata ? ' selected' : '');
+    div.innerHTML = `
+      <div class="result-code">${iata}</div>
+      <div class="result-name">${ap.name}</div>
+      <div class="result-meta">${ap.city}${ap.city && ap.country ? ' · ' : ''}${ap.country}</div>
+    `;
+    div.addEventListener('click', () => selectAirport(iata, ap));
+    list.appendChild(div);
+  });
+}
+
+function buildAirlineList() {
+  const query = airlineSearch.toLowerCase();
+  let items = permittedAirlines
+    .filter(a => {
+      if (!query) return true;
+      return a.iata_code.toLowerCase().includes(query)
+          || a.airline_name.toLowerCase().includes(query);
+    })
+    .sort((a, b) => a.airline_name.localeCompare(b.airline_name));
+
+  const list  = document.getElementById('airline-list');
+  const count = document.getElementById('airline-count');
+  count.textContent = `${items.length} permitted airlines`;
+
+  list.innerHTML = '';
+  items.forEach(al => {
+    const div = document.createElement('div');
+    div.className = 'result-item' + (currentSelection?.type === 'airline' && currentSelection?.id === al.iata_code ? ' selected' : '');
+    const classes = (al.permitted_classes || []).map(c => `<span class="class-badge class-${c}">${classLabel(c)}</span>`).join('');
+    div.innerHTML = `
+      <div class="result-code">${al.iata_code}</div>
+      <div class="result-name">${al.airline_name}</div>
+      <div class="result-meta">${al.country || ''}</div>
+      <div class="result-classes">${classes}</div>
+    `;
+    div.addEventListener('click', () => selectAirline(al));
+    list.appendChild(div);
+  });
+}
+
+function classLabel(c) {
+  return { F: 'First', J: 'Business', W: 'Prem Eco', Y: 'Economy' }[c] || c;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SELECTION HANDLERS
+   ═══════════════════════════════════════════════════════════ */
+function selectAirport(iata, ap) {
+  currentSelection = { type: 'airport', id: iata };
+  rebuildLists();
+  clearLayers();
+
+  // Find all permitted airlines that serve this airport
+  const airlineRoutes = [];
+  permittedAirlines.forEach(al => {
+    const airlineCode = al.iata_code;
+    const routesFrom  = getRoutesForAirlineFromAirport(airlineCode, iata);
+    if (routesFrom.length) airlineRoutes.push({ airline: al, routes: routesFrom });
+  });
+
+  // Draw hub marker
+  addMarker(ap.lat, ap.lon, iata, `<b>${iata}</b> — ${ap.name}<br/>${ap.city}`, true);
+
+  const destSet = new Set();
+  let routeCount = 0;
+
+  airlineRoutes.forEach(({ airline, routes }) => {
+    routes.forEach(dest => {
+      const destAp = airports[dest];
+      if (!destAp) return;
+      drawRoute(ap.lat, ap.lon, destAp.lat, destAp.lon);
+      if (!destSet.has(dest)) {
+        addMarker(destAp.lat, destAp.lon, dest, `<b>${dest}</b> — ${destAp.name}<br/><small>${airline.airline_name}</small>`, false, true);
+        destSet.add(dest);
+      }
+      routeCount++;
+    });
+  });
+
+  updateInfoPanel({
+    type: 'Airport',
+    name: ap.name,
+    code: `${iata} · ${ap.city}, ${ap.country}`,
+    routes: routeCount,
+    airports: destSet.size,
+  });
+
+  fitToRoutes(ap.lat, ap.lon, destSet);
+  document.getElementById('clear-btn').classList.add('visible');
+}
+
+function selectAirline(al) {
+  currentSelection = { type: 'airline', id: al.iata_code };
+  rebuildLists();
+  clearLayers();
+
+  const code     = al.iata_code;
+  const allRoutes = getAllRoutesForAirline(code);
+  const destSet   = new Set();
+  const originSet = new Set();
+  let routeCount  = 0;
+
+  allRoutes.forEach(({ from, to }) => {
+    const fromAp = airports[from];
+    const toAp   = airports[to];
+    if (!fromAp || !toAp) return;
+
+    drawRoute(fromAp.lat, fromAp.lon, toAp.lat, toAp.lon);
+
+    if (!originSet.has(from)) {
+      addMarker(fromAp.lat, fromAp.lon, from, `<b>${from}</b> — ${fromAp.name}`, true);
+      originSet.add(from);
+    }
+    if (!destSet.has(to)) {
+      addMarker(toAp.lat, toAp.lon, to, `<b>${to}</b> — ${toAp.name}`, false, true);
+      destSet.add(to);
+    }
+    routeCount++;
+  });
+
+  const allAirports = new Set([...originSet, ...destSet]);
+
+  updateInfoPanel({
+    type: 'Airline',
+    name: al.airline_name,
+    code: `${code}${al.country ? ' · ' + al.country : ''}`,
+    routes: routeCount,
+    airports: allAirports.size,
+  });
+
+  document.getElementById('clear-btn').classList.add('visible');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ROUTE QUERY HELPERS
+   ═══════════════════════════════════════════════════════════ */
+function getRoutesForAirlineFromAirport(airlineCode, originIata) {
+  const airportRoutes = routeData[originIata];
+  if (!airportRoutes) return [];
+  return Object.keys(airportRoutes).filter(dest => {
+    const carriers = airportRoutes[dest]?.airlines || [];
+    return carriers.includes(airlineCode);
+  });
+}
+
+function getAllRoutesForAirline(airlineCode) {
+  const result = [];
+  Object.entries(routeData).forEach(([from, dests]) => {
+    Object.entries(dests).forEach(([to, info]) => {
+      const carriers = info?.airlines || [];
+      if (carriers.includes(airlineCode)) result.push({ from, to });
+    });
+  });
+  return result;
+}
+
+function getReachableAirports(classFilter) {
+  // Returns set of IATA codes reachable by permitted airlines (optionally filtered by class)
+  const eligible = classFilter === 'all'
+    ? permittedAirlines
+    : permittedAirlines.filter(a => (a.permitted_classes || []).includes(classFilter));
+
+  const codes = new Set(eligible.map(a => a.iata_code));
+  const reachable = new Set();
+
+  Object.entries(routeData).forEach(([from, dests]) => {
+    Object.entries(dests).forEach(([to, info]) => {
+      const carriers = info?.airlines || [];
+      if (carriers.some(c => codes.has(c))) {
+        reachable.add(from);
+        reachable.add(to);
+      }
+    });
+  });
+
+  return reachable;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MAP DRAWING
+   ═══════════════════════════════════════════════════════════ */
+function makeMarkerIcon(isHub, isDest) {
+  const cls = 'airport-marker' + (isHub ? ' hub' : '') + (isDest ? ' dest' : '');
+  return L.divIcon({ className: '', html: `<div class="${cls}"></div>`, iconSize: isHub ? [12,12] : [8,8], iconAnchor: isHub ? [6,6] : [4,4] });
+}
+
+function addMarker(lat, lon, code, popup, isHub=false, isDest=false) {
+  const m = L.marker([lat, lon], { icon: makeMarkerIcon(isHub, isDest), zIndexOffset: isHub ? 1000 : 0 });
+  m.bindPopup(popup, { className: 'dark-popup' });
+  m.addTo(markerLayerGroup);
+}
+
+function drawRoute(lat1, lon1, lat2, lon2) {
+  // Antimeridian-safe great circle approximation via multiple segments
+  const pts = gcPoints(lat1, lon1, lat2, lon2, 50);
+  const segments = splitAtAntimeridian(pts);
+  segments.forEach(seg => {
+    L.polyline(seg, {
+      color: '#f5a623',
+      weight: 1.2,
+      opacity: 0.45,
+      smoothFactor: 1,
+    }).addTo(routeLayerGroup);
+  });
+}
+
+function gcPoints(lat1, lon1, lat2, lon2, n) {
+  // Convert to radians
+  const toR = d => d * Math.PI / 180;
+  const toD = r => r * 180 / Math.PI;
+  const φ1 = toR(lat1), λ1 = toR(lon1), φ2 = toR(lat2), λ2 = toR(lon2);
+  const pts = [];
+  for (let i = 0; i <= n; i++) {
+    const f = i / n;
+    const d = 2 * Math.asin(Math.sqrt(
+      Math.sin((φ2-φ1)/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin((λ2-λ1)/2)**2
+    ));
+    if (d === 0) { pts.push([lat1, lon1]); continue; }
+    const A = Math.sin((1-f)*d)/Math.sin(d);
+    const B = Math.sin(f*d)/Math.sin(d);
+    const x = A*Math.cos(φ1)*Math.cos(λ1) + B*Math.cos(φ2)*Math.cos(λ2);
+    const y = A*Math.cos(φ1)*Math.sin(λ1) + B*Math.cos(φ2)*Math.sin(λ2);
+    const z = A*Math.sin(φ1)              + B*Math.sin(φ2);
+    pts.push([toD(Math.atan2(z, Math.sqrt(x*x+y*y))), toD(Math.atan2(y, x))]);
+  }
+  return pts;
+}
+
+function splitAtAntimeridian(pts) {
+  const segs = [[]];
+  for (let i = 0; i < pts.length; i++) {
+    segs[segs.length-1].push(pts[i]);
+    if (i < pts.length - 1) {
+      const dlon = Math.abs(pts[i+1][1] - pts[i][1]);
+      if (dlon > 180) segs.push([]);
+    }
+  }
+  return segs.filter(s => s.length > 1);
+}
+
+function clearLayers() {
+  routeLayerGroup.clearLayers();
+  markerLayerGroup.clearLayers();
+}
+
+function fitToRoutes(originLat, originLon, destSet) {
+  const pts = [[originLat, originLon]];
+  destSet.forEach(iata => {
+    const ap = airports[iata];
+    if (ap) pts.push([ap.lat, ap.lon]);
+  });
+  if (pts.length > 1) {
+    try { map.fitBounds(L.latLngBounds(pts), { padding: [40, 40], maxZoom: 6 }); }
+    catch(e) {}
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   UI HELPERS
+   ═══════════════════════════════════════════════════════════ */
+function clearSelection() {
+  currentSelection = null;
+  clearLayers();
+  rebuildLists();
+  document.getElementById('info-panel').className = 'empty';
+  document.getElementById('clear-btn').classList.remove('visible');
+}
+
+function rebuildLists() {
+  buildAirportList();
+  buildAirlineList();
+}
+
+function updateInfoPanel(data) {
+  document.getElementById('info-type-label').textContent = data.type;
+  document.getElementById('info-name').textContent = data.name;
+  document.getElementById('info-code').textContent = data.code;
+  document.getElementById('info-routes').textContent = data.routes.toLocaleString();
+  document.getElementById('info-airports').textContent = data.airports.toLocaleString();
+  document.getElementById('info-panel').className = '';
+}
+
+function setStatus(msg) { document.getElementById('map-status').textContent = msg; }
+function setLoading(msg) { document.getElementById('loading-sub').textContent = msg; }
+function setLoadingBar(pct) { document.getElementById('loading-bar').style.width = pct + '%'; }
+
+function hideLoading() {
+  document.getElementById('loading-overlay').classList.add('hidden');
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-banner');
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EVENT LISTENERS
+   ═══════════════════════════════════════════════════════════ */
+// Tabs
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// Airport search
+document.getElementById('airport-search').addEventListener('input', e => {
+  airportSearch = e.target.value;
+  buildAirportList();
+});
+
+// Airline search
+document.getElementById('airline-search').addEventListener('input', e => {
+  airlineSearch = e.target.value;
+  buildAirlineList();
+});
+
+// Class filter pills
+document.querySelectorAll('.pill[data-class]').forEach(pill => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('.pill[data-class]').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    activeClassFilter = pill.dataset.class;
+    buildAirportList();
+    if (currentSelection) clearSelection();
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════
+   POPUP STYLES (injected)
+   ═══════════════════════════════════════════════════════════ */
+const popupStyle = document.createElement('style');
+popupStyle.textContent = `
+  .leaflet-popup-content-wrapper {
+    background: #111520;
+    border: 1px solid #1f2a42;
+    border-radius: 3px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    color: #c8d6e8;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    padding: 0;
+  }
+  .leaflet-popup-content { margin: 10px 14px; }
+  .leaflet-popup-tip { background: #111520; }
+  .leaflet-popup-close-button { color: #5a6e8a !important; font-size: 16px !important; }
+  .leaflet-control-zoom a {
+    background: #111520 !important;
+    border-color: #1f2a42 !important;
+    color: #c8d6e8 !important;
+  }
+  .leaflet-control-zoom a:hover { color: #f5a623 !important; }
+  .leaflet-control-attribution {
+    background: rgba(10,13,20,0.7) !important;
+    color: #2e3d55 !important;
+    font-size: 9px !important;
+  }
+  .leaflet-control-attribution a { color: #3a7a94 !important; }
+`;
+document.head.appendChild(popupStyle);
+
+/* ═══════════════════════════════════════════════════════════
+   GO
+   ═══════════════════════════════════════════════════════════ */
+init();
+</script>
+</body>
+</html>

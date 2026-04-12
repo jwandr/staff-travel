@@ -1,0 +1,86 @@
+{
+  "metadata": {
+    "last_updated": "2026-04-12",
+    "maintained_by": "Staff Travel",
+    "notes": "ID90 eligible airlines and permitted cabin classes. Update as interline agreements change."
+  },
+  "airlines": [
+    {
+      "iata_code": "QF",
+      "airline_name": "Qantas",
+      "country": "Australia",
+      "alliance": "oneworld",
+      "permitted_classes": ["F", "J", "W", "Y"],
+      "staff_fare_type": "ID90",
+      "listing_required": false,
+      "booking_platform": "myIDTravel",
+      "notes": "Home carrier — all cabins available."
+    },
+    {
+      "iata_code": "EK",
+      "airline_name": "Emirates",
+      "country": "United Arab Emirates",
+      "alliance": "none",
+      "permitted_classes": ["J", "Y"],
+      "staff_fare_type": "ID90",
+      "listing_required": true,
+      "booking_platform": "myIDTravel",
+      "notes": "First class not available on ID90. Listing required 24hr before departure."
+    },
+    {
+      "iata_code": "SQ",
+      "airline_name": "Singapore Airlines",
+      "country": "Singapore",
+      "alliance": "Star Alliance",
+      "permitted_classes": ["J", "W", "Y"],
+      "staff_fare_type": "ID90",
+      "listing_required": true,
+      "booking_platform": "myIDTravel",
+      "notes": "Suites class not available. Listing opens 3 days out."
+    },
+    {
+      "iata_code": "BA",
+      "airline_name": "British Airways",
+      "country": "United Kingdom",
+      "alliance": "oneworld",
+      "permitted_classes": ["J", "Y"],
+      "staff_fare_type": "ID90",
+      "listing_required": false,
+      "booking_platform": "myIDTravel",
+      "notes": ""
+    },
+    {
+      "iata_code": "CX",
+      "airline_name": "Cathay Pacific",
+      "country": "Hong Kong",
+      "alliance": "oneworld",
+      "permitted_classes": ["J", "Y"],
+      "staff_fare_type": "ID90",
+      "listing_required": true,
+      "booking_platform": "myIDTravel",
+      "notes": ""
+    },
+    {
+      "iata_code": "NZ",
+      "airline_name": "Air New Zealand",
+      "country": "New Zealand",
+      "alliance": "Star Alliance",
+      "permitted_classes": ["J", "Y"],
+      "staff_fare_type": "ID90",
+      "listing_required": false,
+      "booking_platform": "myIDTravel",
+      "notes": ""
+    },
+    {
+      "iata_code": "MH",
+      "airline_name": "Malaysia Airlines",
+      "country": "Malaysia",
+      "alliance": "oneworld",
+      "permitted_classes": ["Y"],
+      "staff_fare_type": "ZED",
+      "listing_required": false,
+      "booking_platform": "myIDTravel",
+      "notes": "Economy only on ZED agreement."
+    }
+  ]
+}
