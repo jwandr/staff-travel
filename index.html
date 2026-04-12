@@ -809,30 +809,40 @@ async function loadRoutes() {
    This pre-computes everything so UI interactions are instant.
    ═══════════════════════════════════════════════════════════ */
 function buildIndexes() {
-  // ── DIAGNOSTICS ──
-  const sampleOrigins = Object.keys(routeData).slice(0, 2);
-  console.log('=== ROUTE DATA FULL STRUCTURE ===');
-  console.log('Sample origin keys:', sampleOrigins);
-  sampleOrigins.forEach(origin => {
-    console.log(`Full entry for ${origin}:`, JSON.stringify(routeData[origin], null, 2));
-  });
-  // Find first entry that has more than just city_name/continent
-  const richEntry = Object.entries(routeData).find(([, v]) => Object.keys(v).length > 5);
-  if (richEntry) {
-    console.log(`Richer entry [${richEntry[0]}]:`, JSON.stringify(richEntry[1], null, 2));
-  }
-  console.log('=================================');
-  // ── END DIAGNOSTICS ──
-
-  // 1. Build airlineRouteIndex
   const permittedCodes = new Set(permittedAirlines.map(a => a.iata_code));
 
-  Object.entries(routeData).forEach(([from, dests]) => {
-    if (typeof dests !== 'object') return;
-    Object.entries(dests).forEach(([to, info]) => {
-      const carriers = Array.isArray(info?.airlines) ? info.airlines : [];
-      carriers.forEach(code => {
-        if (!permittedCodes.has(code)) return;
+  // The routeData structure is:
+  // { "SYD": { iata, name, city_name, latitude, longitude, routes: [ { iata: "MEL", carriers: [{iata:"QF", name:"Qantas"}], km, min } ] } }
+
+  // Supplement airports dict with any airports from routeData not in OurAirports CSV
+  Object.values(routeData).forEach(ap => {
+    const iata = ap.iata;
+    if (!iata) return;
+    if (!airports[iata]) {
+      const lat = parseFloat(ap.latitude);
+      const lon = parseFloat(ap.longitude);
+      if (!isNaN(lat) && !isNaN(lon)) {
+        airports[iata] = {
+          name:    ap.name       || iata,
+          city:    ap.city_name  || '',
+          country: ap.country    || '',
+          lat, lon,
+          type: 'small_airport',
+        };
+      }
+    }
+  });
+
+  // Build airlineRouteIndex: { airlineIata: [ {from, to} ] }
+  Object.values(routeData).forEach(ap => {
+    const from = ap.iata;
+    if (!from || !Array.isArray(ap.routes)) return;
+    ap.routes.forEach(route => {
+      const to = route.iata;
+      if (!to || !Array.isArray(route.carriers)) return;
+      route.carriers.forEach(carrier => {
+        const code = carrier.iata;
+        if (!code || !permittedCodes.has(code)) return;
         if (!airlineRouteIndex[code]) airlineRouteIndex[code] = [];
         airlineRouteIndex[code].push({ from, to });
       });
@@ -840,21 +850,21 @@ function buildIndexes() {
   });
 
   console.log('Airline route index built for:', Object.keys(airlineRouteIndex));
+  Object.entries(airlineRouteIndex).forEach(([code, routes]) => {
+    console.log(`  ${code}: ${routes.length} routes`);
+  });
 
-  // 2. Build reachableByClass sets: airports reachable per class filter
+  // Build reachableByClass sets
   const classKeys = ['all', 'F', 'J', 'W', 'Y'];
   classKeys.forEach(cls => { reachableByClass[cls] = new Set(); });
 
   permittedAirlines.forEach(airline => {
-    const code = airline.iata_code;
+    const code    = airline.iata_code;
     const classes = airline.permitted_classes || [];
-    const routes = airlineRouteIndex[code] || [];
-
+    const routes  = airlineRouteIndex[code] || [];
     routes.forEach(({ from, to }) => {
-      // Add to 'all'
       reachableByClass['all'].add(from);
       reachableByClass['all'].add(to);
-      // Add to each class this airline serves
       classes.forEach(cls => {
         if (reachableByClass[cls]) {
           reachableByClass[cls].add(from);
@@ -864,7 +874,7 @@ function buildIndexes() {
     });
   });
 
-  console.log(`Reachable airports: all=${reachableByClass['all'].size}, F=${reachableByClass['F'].size}, J=${reachableByClass['J'].size}, Y=${reachableByClass['Y'].size}`);
+  console.log(`Reachable airports: all=${reachableByClass['all'].size}, F=${reachableByClass['F'].size}, J=${reachableByClass['J'].size}, W=${reachableByClass['W'].size}, Y=${reachableByClass['Y'].size}`);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1021,21 +1031,24 @@ function selectAirport(iata, ap) {
   clearLayers();
   rebuildLists();
 
-  // Gather all permitted airlines that have routes FROM this airport
-  const destMap = {}; // dest IATA -> array of airline names
+  // Read routes directly from routeData[iata].routes
+  // Structure: { iata, routes: [ { iata: destIATA, carriers: [{iata, name}], km, min } ] }
+  const destMap = {}; // dest IATA -> array of permitted airline names
   let routeCount = 0;
 
-  permittedAirlines.forEach(al => {
-    const code   = al.iata_code;
-    const routes = airlineRouteIndex[code] || [];
-    routes.forEach(({ from, to }) => {
-      if (from !== iata) return;
-      if (!airports[to]) return;
-      if (!destMap[to]) destMap[to] = [];
-      destMap[to].push(al.airline_name);
+  const entry = routeData[iata];
+  if (entry && Array.isArray(entry.routes)) {
+    entry.routes.forEach(route => {
+      const to = route.iata;
+      if (!to || !airports[to]) return;
+      const permittedCarriers = (route.carriers || [])
+        .filter(c => permittedMap[c.iata])
+        .map(c => permittedMap[c.iata].airline_name);
+      if (permittedCarriers.length === 0) return;
+      destMap[to] = permittedCarriers;
       routeCount++;
     });
-  });
+  }
 
   const destSet = new Set(Object.keys(destMap));
 
