@@ -662,70 +662,68 @@
 
 <script>
 /* ═══════════════════════════════════════════════════════════
-   CONFIGURATION — update DATA_PATH to match your repo layout
+   CONFIGURATION
    ═══════════════════════════════════════════════════════════ */
 const CONFIG = {
-  // Path to your permitted-airlines JSON (relative to index.html)
   permittedAirlinesPath: './data/permitted_airlines.json',
-
-  // OurAirports CSV — fetched via jsDelivr CDN proxy (no CORS issues)
+  // OurAirports via GitHub Pages CDN — CORS-safe
   airportsCsvUrl: 'https://davidmegginson.github.io/ourairports-data/airports.csv',
-
-  // Jonty's airline route data
-  routeDataUrl: 'https://raw.githubusercontent.com/Jonty/airline-route-data/main/airline_routes.json',
-
-  // Only include airports with scheduled service
-  onlyScheduled: true,
+  // Jonty route data via jsDelivr — CORS-safe proxy for raw GitHub content
+  routeDataUrl: 'https://cdn.jsdelivr.net/gh/Jonty/airline-route-data@main/airline_routes.json',
 };
 
 /* ═══════════════════════════════════════════════════════════
    STATE
    ═══════════════════════════════════════════════════════════ */
-let airports      = {};   // { IATA: { name, city, country, lat, lon } }
-let routeData     = {};   // raw Jonty data keyed by IATA
-let permittedAirlines = []; // array from permitted_airlines.json
-let permittedMap  = {};   // { IATA_code: airline_obj }
+let airports          = {};  // { IATA: { name, city, country, lat, lon, type } }
+let routeData         = {};  // raw Jonty data: { ORIGIN: { DEST: { airlines:[..], ... } } }
+let permittedAirlines = [];  // array from permitted_airlines.json
+let permittedMap      = {};  // { iata_code: airline_obj }
 
-let currentSelection  = null;  // { type: 'airport'|'airline', id: string }
+// Pre-computed indexes built once after data loads — avoids re-scanning on every interaction
+let airlineRouteIndex  = {};  // { airlineCode: [ {from, to} ] }
+let reachableByClass   = {};  // { 'all'|'F'|'J'|'W'|'Y': Set<IATA> }
+
+let currentSelection  = null;
 let activeClassFilter = 'all';
 let airportSearch     = '';
 let airlineSearch     = '';
 
-// Leaflet layers
-let map;
-let routeLayerGroup;
-let markerLayerGroup;
+let map, routeLayerGroup, markerLayerGroup;
 
 /* ═══════════════════════════════════════════════════════════
    INIT
    ═══════════════════════════════════════════════════════════ */
 async function init() {
   initMap();
-  setStatus('Fetching airport data…');
-  setLoadingBar(10);
+  setLoadingBar(5);
 
   try {
+    setLoading('Loading your permitted airlines…');
     await loadPermittedAirlines();
-    setLoadingBar(25);
+    setLoadingBar(20);
+
     setLoading('Fetching airport data…');
-
     await loadAirports();
-    setLoadingBar(60);
-    setLoading('Fetching route data…');
+    setLoadingBar(55);
 
+    setLoading('Fetching route data (this is a large file — please wait)…');
     await loadRoutes();
-    setLoadingBar(90);
+    setLoadingBar(85);
+
+    setLoading('Building indexes…');
+    buildIndexes();
+    setLoadingBar(100);
 
     buildAirportList();
     buildAirlineList();
-    setLoadingBar(100);
 
-    setTimeout(hideLoading, 400);
-    setStatus(`${Object.keys(airports).length.toLocaleString()} airports · ${permittedAirlines.length} permitted airlines`);
+    setTimeout(hideLoading, 500);
+    setStatus(`${Object.keys(airports).length.toLocaleString()} airports · ${permittedAirlines.length} permitted airlines loaded`);
 
   } catch (err) {
-    console.error(err);
-    showError('Failed to load data. Check console. Make sure data files are accessible (CORS / path).');
+    console.error('Init error:', err);
+    showError(`Failed to load: ${err.message}. Open browser console (F12) for details.`);
     hideLoading();
   }
 }
@@ -735,15 +733,15 @@ async function init() {
    ═══════════════════════════════════════════════════════════ */
 async function loadPermittedAirlines() {
   const resp = await fetch(CONFIG.permittedAirlinesPath);
-  if (!resp.ok) throw new Error(`Cannot load permitted airlines: ${resp.status}`);
+  if (!resp.ok) throw new Error(`Cannot load permitted_airlines.json (HTTP ${resp.status}). Is the file in ./data/?`);
   const data = await resp.json();
-  permittedAirlines = data.airlines || data; // support both { airlines: [] } and []
+  permittedAirlines = data.airlines || data;
   permittedAirlines.forEach(a => { permittedMap[a.iata_code] = a; });
 }
 
 async function loadAirports() {
   const resp = await fetch(CONFIG.airportsCsvUrl);
-  if (!resp.ok) throw new Error(`Cannot fetch airports CSV: ${resp.status}`);
+  if (!resp.ok) throw new Error(`Cannot fetch airports CSV (HTTP ${resp.status})`);
   const text = await resp.text();
   parseAirportsCsv(text);
 }
@@ -752,35 +750,39 @@ function parseAirportsCsv(text) {
   const lines = text.split('\n');
   const header = parseCsvLine(lines[0]);
   const idx = {};
-  header.forEach((h, i) => idx[h.replace(/"/g,'')] = i);
+  header.forEach((h, i) => { idx[h.replace(/"/g, '').trim()] = i; });
 
   for (let i = 1; i < lines.length; i++) {
-    if (!lines[i].trim()) continue;
-    const cols = parseCsvLine(lines[i]);
-    if (!cols || cols.length < 5) continue;
+    const line = lines[i];
+    if (!line.trim()) continue;
+    const cols = parseCsvLine(line);
+    if (!cols || cols.length < 8) continue;
 
-    const type    = (cols[idx.type] || '').replace(/"/g,'');
-    const sched   = (cols[idx.scheduled_service] || '').replace(/"/g,'');
-    const iata    = (cols[idx.iata_code] || '').replace(/"/g,'');
-    const lat     = parseFloat(cols[idx.latitude_deg]);
-    const lon     = parseFloat(cols[idx.longitude_deg]);
+    const type  = clean(cols[idx['type']]);
+    const sched = clean(cols[idx['scheduled_service']]);
+    const iata  = clean(cols[idx['iata_code']]);
+    const lat   = parseFloat(cols[idx['latitude_deg']]);
+    const lon   = parseFloat(cols[idx['longitude_deg']]);
 
-    if (!iata || iata === '0' || iata.length < 2) continue;
-    if (CONFIG.onlyScheduled && sched !== 'yes' && sched !== '1') continue;
-    if (!['large_airport','medium_airport','small_airport'].includes(type)) continue;
+    if (!iata || iata.length < 2 || iata === '0') continue;
+    if (sched !== 'yes' && sched !== '1') continue;
+    if (!['large_airport', 'medium_airport', 'small_airport'].includes(type)) continue;
     if (isNaN(lat) || isNaN(lon)) continue;
 
     airports[iata] = {
-      name:    (cols[idx.name] || '').replace(/"/g,''),
-      city:    (cols[idx.municipality] || '').replace(/"/g,''),
-      country: (cols[idx.iso_country] || '').replace(/"/g,''),
-      lat, lon,
-      type,
+      name:    clean(cols[idx['name']]),
+      city:    clean(cols[idx['municipality']]),
+      country: clean(cols[idx['iso_country']]),
+      lat, lon, type,
     };
   }
+  console.log(`Loaded ${Object.keys(airports).length} airports`);
 }
 
-// Minimal CSV line parser (handles quoted fields)
+function clean(s) {
+  return (s || '').replace(/^"|"$/g, '').trim();
+}
+
 function parseCsvLine(line) {
   const result = [];
   let cur = '', inQ = false;
@@ -796,8 +798,57 @@ function parseCsvLine(line) {
 
 async function loadRoutes() {
   const resp = await fetch(CONFIG.routeDataUrl);
-  if (!resp.ok) throw new Error(`Cannot fetch route data: ${resp.status}`);
+  if (!resp.ok) throw new Error(`Cannot fetch route data (HTTP ${resp.status}). Check CORS / network.`);
   routeData = await resp.json();
+  console.log(`Loaded route data for ${Object.keys(routeData).length} origin airports`);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INDEX BUILDER — run once after all data is loaded
+   This pre-computes everything so UI interactions are instant.
+   ═══════════════════════════════════════════════════════════ */
+function buildIndexes() {
+  // 1. Build airlineRouteIndex: for each permitted airline, collect all its routes
+  const permittedCodes = new Set(permittedAirlines.map(a => a.iata_code));
+
+  Object.entries(routeData).forEach(([from, dests]) => {
+    if (typeof dests !== 'object') return;
+    Object.entries(dests).forEach(([to, info]) => {
+      const carriers = Array.isArray(info?.airlines) ? info.airlines : [];
+      carriers.forEach(code => {
+        if (!permittedCodes.has(code)) return;
+        if (!airlineRouteIndex[code]) airlineRouteIndex[code] = [];
+        airlineRouteIndex[code].push({ from, to });
+      });
+    });
+  });
+
+  console.log('Airline route index built for:', Object.keys(airlineRouteIndex));
+
+  // 2. Build reachableByClass sets: airports reachable per class filter
+  const classKeys = ['all', 'F', 'J', 'W', 'Y'];
+  classKeys.forEach(cls => { reachableByClass[cls] = new Set(); });
+
+  permittedAirlines.forEach(airline => {
+    const code = airline.iata_code;
+    const classes = airline.permitted_classes || [];
+    const routes = airlineRouteIndex[code] || [];
+
+    routes.forEach(({ from, to }) => {
+      // Add to 'all'
+      reachableByClass['all'].add(from);
+      reachableByClass['all'].add(to);
+      // Add to each class this airline serves
+      classes.forEach(cls => {
+        if (reachableByClass[cls]) {
+          reachableByClass[cls].add(from);
+          reachableByClass[cls].add(to);
+        }
+      });
+    });
+  });
+
+  console.log(`Reachable airports: all=${reachableByClass['all'].size}, F=${reachableByClass['F'].size}, J=${reachableByClass['J'].size}, Y=${reachableByClass['Y'].size}`);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -809,13 +860,12 @@ function initMap() {
     zoom: 2,
     zoomControl: true,
     minZoom: 2,
-    maxZoom: 10,
+    maxZoom: 12,
     worldCopyJump: true,
   });
 
-  // Dark tile layer — CARTO Dark Matter (no API key required)
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/">CARTO</a>',
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
     subdomains: 'abcd',
     maxZoom: 20,
   }).addTo(map);
@@ -828,62 +878,114 @@ function initMap() {
    LIST BUILDERS
    ═══════════════════════════════════════════════════════════ */
 function buildAirportList() {
-  const query = airportSearch.toLowerCase();
+  const query    = airportSearch.toLowerCase().trim();
+  const reachable = reachableByClass[activeClassFilter] || new Set();
 
-  // Airports reachable by permitted airlines filtered by class
-  const reachable = getReachableAirports(activeClassFilter);
-
-  let items = Object.entries(airports)
-    .filter(([iata]) => reachable.has(iata))
-    .filter(([iata, ap]) => {
-      if (!query) return true;
-      return iata.toLowerCase().includes(query)
-          || ap.name.toLowerCase().includes(query)
-          || ap.city.toLowerCase().includes(query);
-    })
-    .sort((a, b) => a[1].city.localeCompare(b[1].city));
+  // If no search query, only show airports in reachable set (could be large)
+  // If there IS a query, search all airports we know about (user might search any airport)
+  let items;
+  if (query.length === 0) {
+    // Show all reachable airports, sorted by city
+    items = Array.from(reachable)
+      .map(iata => [iata, airports[iata]])
+      .filter(([, ap]) => ap != null)
+      .sort((a, b) => a[1].city.localeCompare(b[1].city));
+  } else {
+    // Search ALL loaded airports matching the query
+    items = Object.entries(airports)
+      .filter(([iata, ap]) =>
+        iata.toLowerCase().includes(query) ||
+        ap.name.toLowerCase().includes(query) ||
+        ap.city.toLowerCase().includes(query)
+      )
+      .sort((a, b) => {
+        // Boost airports that are reachable to top
+        const aR = reachable.has(a[0]) ? 0 : 1;
+        const bR = reachable.has(b[0]) ? 0 : 1;
+        if (aR !== bR) return aR - bR;
+        return a[1].city.localeCompare(b[1].city);
+      });
+  }
 
   const list  = document.getElementById('airport-list');
   const count = document.getElementById('airport-count');
-  count.textContent = `${items.length.toLocaleString()} airports`;
+
+  if (query.length === 0) {
+    count.textContent = `${items.length.toLocaleString()} airports served by your airlines`;
+  } else {
+    const reachCount = items.filter(([iata]) => reachable.has(iata)).length;
+    count.textContent = `${items.length} results (${reachCount} served by your airlines)`;
+  }
 
   list.innerHTML = '';
-  items.forEach(([iata, ap]) => {
+
+  if (items.length === 0) {
+    list.innerHTML = '<div style="padding:16px;font-size:11px;color:#5a6e8a;font-family:var(--font-mono)">No airports found</div>';
+    return;
+  }
+
+  // Render only first 200 for performance; search narrows it down
+  const toRender = items.slice(0, 200);
+  toRender.forEach(([iata, ap]) => {
+    const isReachable = reachable.has(iata);
+    const isSelected  = currentSelection?.type === 'airport' && currentSelection?.id === iata;
     const div = document.createElement('div');
-    div.className = 'result-item' + (currentSelection?.type === 'airport' && currentSelection?.id === iata ? ' selected' : '');
+    div.className = 'result-item' + (isSelected ? ' selected' : '');
+    if (!isReachable) div.style.opacity = '0.45';
     div.innerHTML = `
       <div class="result-code">${iata}</div>
       <div class="result-name">${ap.name}</div>
-      <div class="result-meta">${ap.city}${ap.city && ap.country ? ' · ' : ''}${ap.country}</div>
+      <div class="result-meta">${ap.city}${ap.city && ap.country ? ' · ' : ''}${ap.country}${!isReachable ? ' · <em>not served</em>' : ''}</div>
     `;
-    div.addEventListener('click', () => selectAirport(iata, ap));
+    div.addEventListener('click', () => {
+      if (!isReachable) {
+        setStatus(`No permitted airlines serve ${iata} — try a different airport`);
+        return;
+      }
+      selectAirport(iata, ap);
+    });
     list.appendChild(div);
   });
+
+  if (items.length > 200) {
+    const note = document.createElement('div');
+    note.style.cssText = 'padding:10px 16px;font-size:9px;color:#5a6e8a;font-family:var(--font-mono)';
+    note.textContent = `+ ${items.length - 200} more — type to narrow results`;
+    list.appendChild(note);
+  }
 }
 
 function buildAirlineList() {
-  const query = airlineSearch.toLowerCase();
+  const query = airlineSearch.toLowerCase().trim();
   let items = permittedAirlines
     .filter(a => {
       if (!query) return true;
-      return a.iata_code.toLowerCase().includes(query)
-          || a.airline_name.toLowerCase().includes(query);
+      return a.iata_code.toLowerCase().includes(query) ||
+             a.airline_name.toLowerCase().includes(query);
     })
     .sort((a, b) => a.airline_name.localeCompare(b.airline_name));
 
   const list  = document.getElementById('airline-list');
   const count = document.getElementById('airline-count');
-  count.textContent = `${items.length} permitted airlines`;
+  count.textContent = `${items.length} of ${permittedAirlines.length} permitted airlines`;
 
   list.innerHTML = '';
+
+  if (items.length === 0) {
+    list.innerHTML = '<div style="padding:16px;font-size:11px;color:#5a6e8a;font-family:var(--font-mono)">No airlines found</div>';
+    return;
+  }
+
   items.forEach(al => {
+    const isSelected = currentSelection?.type === 'airline' && currentSelection?.id === al.iata_code;
+    const routeCount = (airlineRouteIndex[al.iata_code] || []).length;
     const div = document.createElement('div');
-    div.className = 'result-item' + (currentSelection?.type === 'airline' && currentSelection?.id === al.iata_code ? ' selected' : '');
+    div.className = 'result-item' + (isSelected ? ' selected' : '');
     const classes = (al.permitted_classes || []).map(c => `<span class="class-badge class-${c}">${classLabel(c)}</span>`).join('');
     div.innerHTML = `
       <div class="result-code">${al.iata_code}</div>
       <div class="result-name">${al.airline_name}</div>
-      <div class="result-meta">${al.country || ''}</div>
+      <div class="result-meta">${al.country || ''}${routeCount ? ` · ${routeCount.toLocaleString()} routes` : ' · no routes in dataset'}</div>
       <div class="result-classes">${classes}</div>
     `;
     div.addEventListener('click', () => selectAirline(al));
@@ -900,34 +1002,38 @@ function classLabel(c) {
    ═══════════════════════════════════════════════════════════ */
 function selectAirport(iata, ap) {
   currentSelection = { type: 'airport', id: iata };
-  rebuildLists();
   clearLayers();
+  rebuildLists();
 
-  // Find all permitted airlines that serve this airport
-  const airlineRoutes = [];
-  permittedAirlines.forEach(al => {
-    const airlineCode = al.iata_code;
-    const routesFrom  = getRoutesForAirlineFromAirport(airlineCode, iata);
-    if (routesFrom.length) airlineRoutes.push({ airline: al, routes: routesFrom });
-  });
-
-  // Draw hub marker
-  addMarker(ap.lat, ap.lon, iata, `<b>${iata}</b> — ${ap.name}<br/>${ap.city}`, true);
-
-  const destSet = new Set();
+  // Gather all permitted airlines that have routes FROM this airport
+  const destMap = {}; // dest IATA -> array of airline names
   let routeCount = 0;
 
-  airlineRoutes.forEach(({ airline, routes }) => {
-    routes.forEach(dest => {
-      const destAp = airports[dest];
-      if (!destAp) return;
-      drawRoute(ap.lat, ap.lon, destAp.lat, destAp.lon);
-      if (!destSet.has(dest)) {
-        addMarker(destAp.lat, destAp.lon, dest, `<b>${dest}</b> — ${destAp.name}<br/><small>${airline.airline_name}</small>`, false, true);
-        destSet.add(dest);
-      }
+  permittedAirlines.forEach(al => {
+    const code   = al.iata_code;
+    const routes = airlineRouteIndex[code] || [];
+    routes.forEach(({ from, to }) => {
+      if (from !== iata) return;
+      if (!airports[to]) return;
+      if (!destMap[to]) destMap[to] = [];
+      destMap[to].push(al.airline_name);
       routeCount++;
     });
+  });
+
+  const destSet = new Set(Object.keys(destMap));
+
+  // Draw hub
+  addMarker(ap.lat, ap.lon, iata, `<b>${iata}</b> — ${ap.name}<br/>${ap.city}, ${ap.country}`, true, false);
+
+  // Draw routes and destination markers
+  Object.entries(destMap).forEach(([dest, airlines]) => {
+    const destAp = airports[dest];
+    if (!destAp) return;
+    drawRoute(ap.lat, ap.lon, destAp.lat, destAp.lon);
+    addMarker(destAp.lat, destAp.lon, dest,
+      `<b>${dest}</b> — ${destAp.name}<br/><small>${airlines.join(', ')}</small>`,
+      false, true);
   });
 
   updateInfoPanel({
@@ -938,95 +1044,54 @@ function selectAirport(iata, ap) {
     airports: destSet.size,
   });
 
-  fitToRoutes(ap.lat, ap.lon, destSet);
+  fitToPoints(ap.lat, ap.lon, destSet);
   document.getElementById('clear-btn').classList.add('visible');
 }
 
 function selectAirline(al) {
   currentSelection = { type: 'airline', id: al.iata_code };
-  rebuildLists();
   clearLayers();
+  rebuildLists();
 
-  const code     = al.iata_code;
-  const allRoutes = getAllRoutesForAirline(code);
-  const destSet   = new Set();
-  const originSet = new Set();
-  let routeCount  = 0;
+  const routes = airlineRouteIndex[al.iata_code] || [];
 
-  allRoutes.forEach(({ from, to }) => {
+  if (routes.length === 0) {
+    setStatus(`No routes found for ${al.airline_name} in dataset`);
+    updateInfoPanel({ type: 'Airline', name: al.airline_name, code: al.iata_code, routes: 0, airports: 0 });
+    document.getElementById('clear-btn').classList.add('visible');
+    return;
+  }
+
+  const allAirportCodes = new Set();
+  let drawn = 0;
+
+  routes.forEach(({ from, to }) => {
     const fromAp = airports[from];
     const toAp   = airports[to];
     if (!fromAp || !toAp) return;
 
     drawRoute(fromAp.lat, fromAp.lon, toAp.lat, toAp.lon);
 
-    if (!originSet.has(from)) {
-      addMarker(fromAp.lat, fromAp.lon, from, `<b>${from}</b> — ${fromAp.name}`, true);
-      originSet.add(from);
+    if (!allAirportCodes.has(from)) {
+      addMarker(fromAp.lat, fromAp.lon, from, `<b>${from}</b> — ${fromAp.name}`, true, false);
+      allAirportCodes.add(from);
     }
-    if (!destSet.has(to)) {
+    if (!allAirportCodes.has(to)) {
       addMarker(toAp.lat, toAp.lon, to, `<b>${to}</b> — ${toAp.name}`, false, true);
-      destSet.add(to);
+      allAirportCodes.add(to);
     }
-    routeCount++;
+    drawn++;
   });
-
-  const allAirports = new Set([...originSet, ...destSet]);
 
   updateInfoPanel({
     type: 'Airline',
     name: al.airline_name,
-    code: `${code}${al.country ? ' · ' + al.country : ''}`,
-    routes: routeCount,
-    airports: allAirports.size,
+    code: `${al.iata_code}${al.country ? ' · ' + al.country : ''}`,
+    routes: drawn,
+    airports: allAirportCodes.size,
   });
 
   document.getElementById('clear-btn').classList.add('visible');
-}
-
-/* ═══════════════════════════════════════════════════════════
-   ROUTE QUERY HELPERS
-   ═══════════════════════════════════════════════════════════ */
-function getRoutesForAirlineFromAirport(airlineCode, originIata) {
-  const airportRoutes = routeData[originIata];
-  if (!airportRoutes) return [];
-  return Object.keys(airportRoutes).filter(dest => {
-    const carriers = airportRoutes[dest]?.airlines || [];
-    return carriers.includes(airlineCode);
-  });
-}
-
-function getAllRoutesForAirline(airlineCode) {
-  const result = [];
-  Object.entries(routeData).forEach(([from, dests]) => {
-    Object.entries(dests).forEach(([to, info]) => {
-      const carriers = info?.airlines || [];
-      if (carriers.includes(airlineCode)) result.push({ from, to });
-    });
-  });
-  return result;
-}
-
-function getReachableAirports(classFilter) {
-  // Returns set of IATA codes reachable by permitted airlines (optionally filtered by class)
-  const eligible = classFilter === 'all'
-    ? permittedAirlines
-    : permittedAirlines.filter(a => (a.permitted_classes || []).includes(classFilter));
-
-  const codes = new Set(eligible.map(a => a.iata_code));
-  const reachable = new Set();
-
-  Object.entries(routeData).forEach(([from, dests]) => {
-    Object.entries(dests).forEach(([to, info]) => {
-      const carriers = info?.airlines || [];
-      if (carriers.some(c => codes.has(c))) {
-        reachable.add(from);
-        reachable.add(to);
-      }
-    });
-  });
-
-  return reachable;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1034,47 +1099,45 @@ function getReachableAirports(classFilter) {
    ═══════════════════════════════════════════════════════════ */
 function makeMarkerIcon(isHub, isDest) {
   const cls = 'airport-marker' + (isHub ? ' hub' : '') + (isDest ? ' dest' : '');
-  return L.divIcon({ className: '', html: `<div class="${cls}"></div>`, iconSize: isHub ? [12,12] : [8,8], iconAnchor: isHub ? [6,6] : [4,4] });
+  const size = isHub ? [12, 12] : [8, 8];
+  return L.divIcon({ className: '', html: `<div class="${cls}"></div>`, iconSize: size, iconAnchor: [size[0]/2, size[1]/2] });
 }
 
-function addMarker(lat, lon, code, popup, isHub=false, isDest=false) {
-  const m = L.marker([lat, lon], { icon: makeMarkerIcon(isHub, isDest), zIndexOffset: isHub ? 1000 : 0 });
-  m.bindPopup(popup, { className: 'dark-popup' });
+function addMarker(lat, lon, code, popupHtml, isHub = false, isDest = false) {
+  const m = L.marker([lat, lon], {
+    icon: makeMarkerIcon(isHub, isDest),
+    zIndexOffset: isHub ? 1000 : 0,
+  });
+  m.bindPopup(popupHtml);
   m.addTo(markerLayerGroup);
 }
 
 function drawRoute(lat1, lon1, lat2, lon2) {
-  // Antimeridian-safe great circle approximation via multiple segments
-  const pts = gcPoints(lat1, lon1, lat2, lon2, 50);
+  const pts      = gcPoints(lat1, lon1, lat2, lon2, 40);
   const segments = splitAtAntimeridian(pts);
   segments.forEach(seg => {
-    L.polyline(seg, {
-      color: '#f5a623',
-      weight: 1.2,
-      opacity: 0.45,
-      smoothFactor: 1,
-    }).addTo(routeLayerGroup);
+    L.polyline(seg, { color: '#f5a623', weight: 1.2, opacity: 0.4, smoothFactor: 1 })
+     .addTo(routeLayerGroup);
   });
 }
 
 function gcPoints(lat1, lon1, lat2, lon2, n) {
-  // Convert to radians
   const toR = d => d * Math.PI / 180;
   const toD = r => r * 180 / Math.PI;
   const φ1 = toR(lat1), λ1 = toR(lon1), φ2 = toR(lat2), λ2 = toR(lon2);
+  const d = 2 * Math.asin(Math.sqrt(
+    Math.sin((φ2 - φ1) / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin((λ2 - λ1) / 2) ** 2
+  ));
+  if (d === 0) return [[lat1, lon1], [lat2, lon2]];
   const pts = [];
   for (let i = 0; i <= n; i++) {
     const f = i / n;
-    const d = 2 * Math.asin(Math.sqrt(
-      Math.sin((φ2-φ1)/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin((λ2-λ1)/2)**2
-    ));
-    if (d === 0) { pts.push([lat1, lon1]); continue; }
-    const A = Math.sin((1-f)*d)/Math.sin(d);
-    const B = Math.sin(f*d)/Math.sin(d);
-    const x = A*Math.cos(φ1)*Math.cos(λ1) + B*Math.cos(φ2)*Math.cos(λ2);
-    const y = A*Math.cos(φ1)*Math.sin(λ1) + B*Math.cos(φ2)*Math.sin(λ2);
-    const z = A*Math.sin(φ1)              + B*Math.sin(φ2);
-    pts.push([toD(Math.atan2(z, Math.sqrt(x*x+y*y))), toD(Math.atan2(y, x))]);
+    const A = Math.sin((1 - f) * d) / Math.sin(d);
+    const B = Math.sin(f * d) / Math.sin(d);
+    const x = A * Math.cos(φ1) * Math.cos(λ1) + B * Math.cos(φ2) * Math.cos(λ2);
+    const y = A * Math.cos(φ1) * Math.sin(λ1) + B * Math.cos(φ2) * Math.sin(λ2);
+    const z = A * Math.sin(φ1) + B * Math.sin(φ2);
+    pts.push([toD(Math.atan2(z, Math.sqrt(x * x + y * y))), toD(Math.atan2(y, x))]);
   }
   return pts;
 }
@@ -1082,11 +1145,8 @@ function gcPoints(lat1, lon1, lat2, lon2, n) {
 function splitAtAntimeridian(pts) {
   const segs = [[]];
   for (let i = 0; i < pts.length; i++) {
-    segs[segs.length-1].push(pts[i]);
-    if (i < pts.length - 1) {
-      const dlon = Math.abs(pts[i+1][1] - pts[i][1]);
-      if (dlon > 180) segs.push([]);
-    }
+    segs[segs.length - 1].push(pts[i]);
+    if (i < pts.length - 1 && Math.abs(pts[i + 1][1] - pts[i][1]) > 180) segs.push([]);
   }
   return segs.filter(s => s.length > 1);
 }
@@ -1096,15 +1156,11 @@ function clearLayers() {
   markerLayerGroup.clearLayers();
 }
 
-function fitToRoutes(originLat, originLon, destSet) {
+function fitToPoints(originLat, originLon, iataSet) {
   const pts = [[originLat, originLon]];
-  destSet.forEach(iata => {
-    const ap = airports[iata];
-    if (ap) pts.push([ap.lat, ap.lon]);
-  });
+  iataSet.forEach(iata => { const ap = airports[iata]; if (ap) pts.push([ap.lat, ap.lon]); });
   if (pts.length > 1) {
-    try { map.fitBounds(L.latLngBounds(pts), { padding: [40, 40], maxZoom: 6 }); }
-    catch(e) {}
+    try { map.fitBounds(L.latLngBounds(pts), { padding: [50, 50], maxZoom: 7 }); } catch (e) {}
   }
 }
 
@@ -1117,6 +1173,7 @@ function clearSelection() {
   rebuildLists();
   document.getElementById('info-panel').className = 'empty';
   document.getElementById('clear-btn').classList.remove('visible');
+  setStatus(`${Object.keys(airports).length.toLocaleString()} airports · ${permittedAirlines.length} permitted airlines loaded`);
 }
 
 function rebuildLists() {
@@ -1124,23 +1181,19 @@ function rebuildLists() {
   buildAirlineList();
 }
 
-function updateInfoPanel(data) {
-  document.getElementById('info-type-label').textContent = data.type;
-  document.getElementById('info-name').textContent = data.name;
-  document.getElementById('info-code').textContent = data.code;
-  document.getElementById('info-routes').textContent = data.routes.toLocaleString();
-  document.getElementById('info-airports').textContent = data.airports.toLocaleString();
+function updateInfoPanel({ type, name, code, routes, airports: apCount }) {
+  document.getElementById('info-type-label').textContent = type;
+  document.getElementById('info-name').textContent = name;
+  document.getElementById('info-code').textContent = code;
+  document.getElementById('info-routes').textContent = routes.toLocaleString();
+  document.getElementById('info-airports').textContent = apCount.toLocaleString();
   document.getElementById('info-panel').className = '';
 }
 
 function setStatus(msg) { document.getElementById('map-status').textContent = msg; }
 function setLoading(msg) { document.getElementById('loading-sub').textContent = msg; }
 function setLoadingBar(pct) { document.getElementById('loading-bar').style.width = pct + '%'; }
-
-function hideLoading() {
-  document.getElementById('loading-overlay').classList.add('hidden');
-}
-
+function hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
 function showError(msg) {
   const el = document.getElementById('error-banner');
   el.textContent = msg;
@@ -1150,7 +1203,6 @@ function showError(msg) {
 /* ═══════════════════════════════════════════════════════════
    EVENT LISTENERS
    ═══════════════════════════════════════════════════════════ */
-// Tabs
 document.querySelectorAll('.tab').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
@@ -1160,58 +1212,42 @@ document.querySelectorAll('.tab').forEach(btn => {
   });
 });
 
-// Airport search
 document.getElementById('airport-search').addEventListener('input', e => {
   airportSearch = e.target.value;
   buildAirportList();
 });
 
-// Airline search
 document.getElementById('airline-search').addEventListener('input', e => {
   airlineSearch = e.target.value;
   buildAirlineList();
 });
 
-// Class filter pills
 document.querySelectorAll('.pill[data-class]').forEach(pill => {
   pill.addEventListener('click', () => {
     document.querySelectorAll('.pill[data-class]').forEach(p => p.classList.remove('active'));
     pill.classList.add('active');
     activeClassFilter = pill.dataset.class;
-    buildAirportList();
     if (currentSelection) clearSelection();
+    else buildAirportList();
   });
 });
 
 /* ═══════════════════════════════════════════════════════════
-   POPUP STYLES (injected)
+   POPUP STYLES
    ═══════════════════════════════════════════════════════════ */
 const popupStyle = document.createElement('style');
 popupStyle.textContent = `
   .leaflet-popup-content-wrapper {
-    background: #111520;
-    border: 1px solid #1f2a42;
-    border-radius: 3px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-    color: #c8d6e8;
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
-    padding: 0;
+    background: #111520; border: 1px solid #1f2a42; border-radius: 3px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6); color: #c8d6e8;
+    font-family: 'Space Mono', monospace; font-size: 11px; padding: 0;
   }
-  .leaflet-popup-content { margin: 10px 14px; }
+  .leaflet-popup-content { margin: 10px 14px; line-height: 1.6; }
   .leaflet-popup-tip { background: #111520; }
-  .leaflet-popup-close-button { color: #5a6e8a !important; font-size: 16px !important; }
-  .leaflet-control-zoom a {
-    background: #111520 !important;
-    border-color: #1f2a42 !important;
-    color: #c8d6e8 !important;
-  }
+  .leaflet-popup-close-button { color: #5a6e8a !important; }
+  .leaflet-control-zoom a { background: #111520 !important; border-color: #1f2a42 !important; color: #c8d6e8 !important; }
   .leaflet-control-zoom a:hover { color: #f5a623 !important; }
-  .leaflet-control-attribution {
-    background: rgba(10,13,20,0.7) !important;
-    color: #2e3d55 !important;
-    font-size: 9px !important;
-  }
+  .leaflet-control-attribution { background: rgba(10,13,20,0.7) !important; color: #2e3d55 !important; font-size: 9px !important; }
   .leaflet-control-attribution a { color: #3a7a94 !important; }
 `;
 document.head.appendChild(popupStyle);
