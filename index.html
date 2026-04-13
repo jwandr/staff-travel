@@ -492,7 +492,6 @@ async function init() {
     setLoading('Building indexes...'); buildIndexes(); setLoadingBar(100);
     buildAirportList(); buildAirlineList();
     setTimeout(hideLoading, 400);
-    tryGeolocation();
     setStatus(`${Object.keys(airports).length.toLocaleString()} airports | ${permittedAirlines.length} staff airlines`);
   } catch(err) { console.error(err); showError(`Failed to load: ${err.message}`); hideLoading(); }
 }
@@ -506,9 +505,6 @@ async function loadPermittedAirlines() {
   const data = await r.json();
   permittedAirlines = data.airlines || data;
   permittedAirlines.forEach(a => { permittedMap[a.iata_code] = a; });
-  // Load blocked airports/airlines if defined
-  if(data.blocked_airports) data.blocked_airports.forEach(c=>blockedAirports.add(c));
-  if(data.blocked_airlines) data.blocked_airlines.forEach(c=>blockedAirlines.add(c));
 }
 
 async function loadAirports() {
@@ -581,7 +577,7 @@ function buildIndexes() {
         if (!allRouteIndex[code]) allRouteIndex[code]=[];
         allRouteIndex[code].push({from,to});
 
-        if (permittedCodes.has(code) && !blockedAirlines.has(code)) {
+        if (permittedCodes.has(code)) {
           if (!staffRouteIndex[code]) staffRouteIndex[code]=[];
           staffRouteIndex[code].push({from,to,km,min});
           if (!staffAirportRoutes[from][to]) staffAirportRoutes[from][to]=[];
@@ -642,8 +638,7 @@ function buildAirportList() {
     const div=document.createElement('div');
     div.className='result-item'+(isSelected?' selected':'');
     if(!isStaff) div.style.opacity='0.5';
-    const blockedNote = blockedAirports.has(iata) ? ' · <span style="color:#dc2626;font-weight:600">&#9940; Blocked</span>' : '';
-    div.innerHTML=`<div class="result-body"><div class="result-code">${iata}</div><div class="result-name">${ap.name}</div><div class="result-meta">${ap.city}${ap.city&&ap.country?' · ':''}${ap.country}${!isStaff?' · no staff routes':''}${blockedNote}</div></div>`;
+    div.innerHTML=`<div class="result-body"><div class="result-code">${iata}</div><div class="result-name">${ap.name}</div><div class="result-meta">${ap.city}${ap.city&&ap.country?' · ':''}${ap.country}${!isStaff?' · no staff routes':''}</div></div>`;
     div.addEventListener('click',()=>selectAirport(iata,ap));
     list.appendChild(div);
   });
@@ -757,7 +752,6 @@ function selectAirport(iata, ap) {
 
   Object.entries(staffRoutes).forEach(([dest,airlineNames])=>{
     const destAp=airports[dest]; if(!destAp) return;
-    if(blockedAirports.has(dest)) return; // skip blocked destinations
     if(airportClassFilter!=='all'){
       const hasEligible=(allCarriers[dest]||[]).some(c=>eligibleCodes.has(c.iata));
       if(!hasEligible) return;
@@ -885,7 +879,6 @@ function findRoutes() {
     const neighbors=staffAdj[last]||{};
     Object.entries(neighbors).forEach(([next,info])=>{
       if(visited.has(next)) return;
-      if(blockedAirports.has(next)) return;
       if(routeClassFilter!=='all'){
         const ok=permittedAirlines.some(al=>info.airlines.includes(al.airline_name)&&(al.permitted_classes||[]).includes(routeClassFilter));
         if(!ok) return;
@@ -1302,53 +1295,6 @@ _s.textContent=`
 document.head.appendChild(_s);
 
 
-
-/* ── Geolocation: find nearest airport to user ── */
-function haversineKm(lat1,lon1,lat2,lon2){
-  const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180;
-  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-}
-
-function findNearestStaffAirport(lat, lon){
-  let best=null, bestDist=Infinity;
-  reachableStaff.forEach(iata=>{
-    const ap=airports[iata]; if(!ap) return;
-    const d=haversineKm(lat,lon,ap.lat,ap.lon);
-    if(d<bestDist){bestDist=d;best=iata;}
-  });
-  return best;
-}
-
-function tryGeolocation(){
-  if(!navigator.geolocation) return;
-  navigator.geolocation.getCurrentPosition(pos=>{
-    const {latitude:lat, longitude:lon} = pos.coords;
-    // Wait until indexes are built (poll briefly)
-    const check = setInterval(()=>{
-      if(reachableStaff.size===0) return;
-      clearInterval(check);
-      const iata = findNearestStaffAirport(lat,lon);
-      if(!iata) return;
-      const ap = airports[iata];
-      if(!ap) return;
-      // Pre-fill as route origin
-      routeOrigin={iata,ap};
-      const vEl=document.getElementById('route-origin-val');
-      const sEl=document.getElementById('route-origin-sub');
-      const cEl=document.getElementById('route-origin-clear');
-      const bEl=document.getElementById('route-origin-box');
-      if(vEl){vEl.textContent=`${iata} - ${ap.name}`;vEl.classList.remove('placeholder');}
-      if(sEl){sEl.textContent=`${ap.city}, ${ap.country}`;sEl.style.display='block';}
-      if(cEl) cEl.classList.add('visible');
-      if(bEl) bEl.classList.add('has-value');
-      document.getElementById('route-search-btn').disabled=!(routeOrigin&&routeDest);
-      // Also show a subtle status message
-      setStatus(`Nearest staff airport: ${iata} - ${ap.name}`);
-      setTimeout(()=>setStatus(`${Object.keys(airports).length.toLocaleString()} airports | ${permittedAirlines.length} staff airlines`),4000);
-    },200);
-  }, ()=>{/* silently ignore denied */}, {timeout:8000});
-}
 
 /* ── Mobile view toggle ── */
 let mobileMapMode = false;

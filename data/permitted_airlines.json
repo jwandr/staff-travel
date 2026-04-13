@@ -167,18 +167,5 @@
 {"iata_code": "YN","airline_name": "Air Creebec","country": "Canada","alliance": "staff travel","permitted_classes": ["Y"],"staff_fare_type": "ID90","listing_required": false,"booking_platform": "myIDTravel","notes": "Home carrier — all cabins available."},
 {"iata_code": "YR","airline_name": "Scenic Airlines","country": "United States","alliance": "staff travel","permitted_classes": [],"staff_fare_type": "ID90","listing_required": false,"booking_platform": "myIDTravel","notes": "Home carrier — all cabins available."},
 {"iata_code": "Z0","airline_name": "Norse Atlantic UK","country": "United Kingdom","alliance": "staff travel","permitted_classes": ["Y"],"staff_fare_type": "ID90","listing_required": false,"booking_platform": "myIDTravel","notes": "Home carrier — all cabins available."}
-],
-
-"blocked_airports": [
-    "BEY",
-    "TLV",
-    "BGW",
-    "BSR",
-    "NJF",
-    "OSM",
-    "SDA"
-  ],
-  "blocked_airlines": []
-
-
+]
 }
