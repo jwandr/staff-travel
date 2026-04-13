@@ -58,13 +58,13 @@
        overflow-x:hidden stops content blowing the panel wider.
        position:relative needed for the route picker overlay.
     ── */
-    #panel-body{flex:1 1 0;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;position:relative}
-    #panel-body::-webkit-scrollbar{width:3px}
-    #panel-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+    /* panel-body: just a flex container, no scrolling here */
+    #panel-body{flex:1 1 0;min-height:0;display:flex;flex-direction:column;overflow:hidden;position:relative}
 
-    /* tab-content fills panel-body exactly — NO overflow set here,
-       panel-body handles all scrolling */
-    .tab-content{display:none;flex-direction:column;flex-shrink:0;width:100%}
+    /* Each tab fills panel-body and is itself a flex column scroll container.
+       Fixed children (search, controls) have flex-shrink:0.
+       The result-list gets flex:1 and overflows. */
+    .tab-content{display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden;width:100%}
     .tab-content.active{display:flex}
 
     /* ── Search ── */
@@ -95,10 +95,12 @@
     .pill:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-soft)}
     .pill.active{background:var(--blue);border-color:var(--blue);color:#fff}
 
-    /* ── Result list — children flow naturally; panel-body scrolls ── */
-    .result-list{flex-shrink:0;width:100%}
-    .result-count{padding:4px 14px;font-size:11px;font-family:var(--font-mono);color:var(--text-muted);width:100%}
-    .result-item{padding:10px 14px;cursor:pointer;border-left:3px solid transparent;transition:background 0.12s,border-color 0.12s;display:flex;align-items:center;gap:10px;width:100%;min-width:0;overflow:hidden}
+    /* ── Result list — the scroll container inside each tab ── */
+    .result-list{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;width:100%}
+    .result-list::-webkit-scrollbar{width:3px}
+    .result-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+    .result-count{padding:4px 14px;font-size:11px;font-family:var(--font-mono);color:var(--text-muted);flex-shrink:0;width:100%}
+    .result-item{padding:10px 14px;cursor:pointer;border-left:3px solid transparent;transition:background 0.12s,border-color 0.12s;display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden}
     .result-item:hover{background:var(--surface2);border-left-color:var(--blue-mid)}
     .result-item.selected{background:var(--blue-soft);border-left-color:var(--blue)}
     .result-logo{width:44px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg);border:1px solid var(--border);border-radius:5px;overflow:hidden;padding:2px}
@@ -117,7 +119,7 @@
     .class-Y{background:rgba(14,165,233,0.1);color:#0369a1;border:1px solid rgba(14,165,233,0.3)}
 
     /* ── Route finder ── */
-    .route-finder-wrap{padding:14px;display:flex;flex-direction:column;gap:8px;flex-shrink:0}
+    .route-finder-wrap{padding:14px;display:flex;flex-direction:column;gap:8px;flex-shrink:0;width:100%}
     /* Route airport selector — now inline search + list like other tabs */
     .route-airport-box{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:10px 36px 10px 12px;cursor:pointer;transition:border-color 0.15s;position:relative}
     .route-airport-box:hover{border-color:var(--blue)}
@@ -147,8 +149,8 @@
     .route-picker-title{font-size:13px;font-weight:700;color:var(--text)}
     .route-picker-header{padding:4px 14px 2px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);font-family:var(--font-mono);flex-shrink:0}
 
-    .route-results{display:none;flex-shrink:0;width:100%;padding-bottom:8px}
-    .route-results.visible{display:block;width:100%}
+    .route-results{display:none;flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding-bottom:8px}
+    .route-results.visible{display:block}
 
     .route-result-card{margin:8px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s}
     .route-result-card:hover{border-color:var(--col-business);box-shadow:0 2px 10px var(--col-business-soft)}
@@ -228,6 +230,30 @@
     #error-banner.visible{display:block}
     #route-picker-airports{flex:1 1 0;min-height:0;overflow-y:auto;overflow-x:hidden}
     *{scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+
+    /* ══ MOBILE (≤ 767px) ══════════════════════════════════════
+       Stack layout: panel fills screen, map hidden behind a toggle.
+       A floating button switches between panel and map views.
+    ══════════════════════════════════════════════════════════ */
+    #mobile-toggle{display:none}
+    @media (max-width:767px){
+      #app{flex-direction:column}
+      #panel{flex:0 0 auto;width:100%;max-width:100%;height:auto;flex:1 1 0;min-height:0;border-right:none;border-bottom:1px solid var(--border)}
+      #map-wrap{flex:1 1 0;min-height:0;display:none}
+      #panel.map-mode{display:none}
+      #map-wrap.map-mode{display:block}
+      #mobile-toggle{
+        display:flex;align-items:center;gap:8px;
+        position:fixed;bottom:20px;right:20px;z-index:2000;
+        background:var(--blue);color:white;border:none;border-radius:24px;
+        padding:10px 18px;font-size:13px;font-weight:700;
+        font-family:var(--font-ui);cursor:pointer;
+        box-shadow:0 4px 16px rgba(26,107,250,0.4);
+      }
+      /* On mobile, clear-btn sits higher to avoid overlap with toggle */
+      #clear-btn{bottom:70px}
+    }
+
   </style>
 </head>
 <body>
@@ -412,6 +438,7 @@
       <div class="legend-row"><div class="legend-line" style="background:var(--col-other)"></div><span>Non-staff route</span></div>
     </div>
     <button id="clear-btn" onclick="clearSelection()">&#10005; Clear</button>
+    <button id="mobile-toggle" onclick="toggleMobileView()">&#9993; Map</button>
   </div>
 </div>
 
@@ -465,6 +492,7 @@ async function init() {
     setLoading('Building indexes...'); buildIndexes(); setLoadingBar(100);
     buildAirportList(); buildAirlineList();
     setTimeout(hideLoading, 400);
+    tryGeolocation();
     setStatus(`${Object.keys(airports).length.toLocaleString()} airports | ${permittedAirlines.length} staff airlines`);
   } catch(err) { console.error(err); showError(`Failed to load: ${err.message}`); hideLoading(); }
 }
@@ -478,6 +506,9 @@ async function loadPermittedAirlines() {
   const data = await r.json();
   permittedAirlines = data.airlines || data;
   permittedAirlines.forEach(a => { permittedMap[a.iata_code] = a; });
+  // Load blocked airports/airlines if defined
+  if(data.blocked_airports) data.blocked_airports.forEach(c=>blockedAirports.add(c));
+  if(data.blocked_airlines) data.blocked_airlines.forEach(c=>blockedAirlines.add(c));
 }
 
 async function loadAirports() {
@@ -550,7 +581,7 @@ function buildIndexes() {
         if (!allRouteIndex[code]) allRouteIndex[code]=[];
         allRouteIndex[code].push({from,to});
 
-        if (permittedCodes.has(code)) {
+        if (permittedCodes.has(code) && !blockedAirlines.has(code)) {
           if (!staffRouteIndex[code]) staffRouteIndex[code]=[];
           staffRouteIndex[code].push({from,to,km,min});
           if (!staffAirportRoutes[from][to]) staffAirportRoutes[from][to]=[];
@@ -611,7 +642,8 @@ function buildAirportList() {
     const div=document.createElement('div');
     div.className='result-item'+(isSelected?' selected':'');
     if(!isStaff) div.style.opacity='0.5';
-    div.innerHTML=`<div class="result-body"><div class="result-code">${iata}</div><div class="result-name">${ap.name}</div><div class="result-meta">${ap.city}${ap.city&&ap.country?' · ':''}${ap.country}${!isStaff?' · no staff routes':''}</div></div>`;
+    const blockedNote = blockedAirports.has(iata) ? ' · <span style="color:#dc2626;font-weight:600">&#9940; Blocked</span>' : '';
+    div.innerHTML=`<div class="result-body"><div class="result-code">${iata}</div><div class="result-name">${ap.name}</div><div class="result-meta">${ap.city}${ap.city&&ap.country?' · ':''}${ap.country}${!isStaff?' · no staff routes':''}${blockedNote}</div></div>`;
     div.addEventListener('click',()=>selectAirport(iata,ap));
     list.appendChild(div);
   });
@@ -725,6 +757,7 @@ function selectAirport(iata, ap) {
 
   Object.entries(staffRoutes).forEach(([dest,airlineNames])=>{
     const destAp=airports[dest]; if(!destAp) return;
+    if(blockedAirports.has(dest)) return; // skip blocked destinations
     if(airportClassFilter!=='all'){
       const hasEligible=(allCarriers[dest]||[]).some(c=>eligibleCodes.has(c.iata));
       if(!hasEligible) return;
@@ -836,7 +869,11 @@ function findRoutes() {
   if(!routeOrigin||!routeDest) return;
   const origin=routeOrigin.iata, dest=routeDest.iata;
   if(origin===dest) return;
+  // Clear previous results immediately
+  document.getElementById('route-results-list').innerHTML='';
+  document.getElementById('route-results-count').textContent='Searching...';
   document.getElementById('route-results').classList.add('visible');
+  clearLayers();
 
   const maxLegs=getMaxLegs();
   const results=[], seen=new Set();
@@ -848,6 +885,7 @@ function findRoutes() {
     const neighbors=staffAdj[last]||{};
     Object.entries(neighbors).forEach(([next,info])=>{
       if(visited.has(next)) return;
+      if(blockedAirports.has(next)) return;
       if(routeClassFilter!=='all'){
         const ok=permittedAirlines.some(al=>info.airlines.includes(al.airline_name)&&(al.permitted_classes||[]).includes(routeClassFilter));
         if(!ok) return;
@@ -1262,6 +1300,74 @@ _s.textContent=`
   .leaflet-control-attribution a{color:#1a6bfa!important}
 `;
 document.head.appendChild(_s);
+
+
+
+/* ── Geolocation: find nearest airport to user ── */
+function haversineKm(lat1,lon1,lat2,lon2){
+  const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function findNearestStaffAirport(lat, lon){
+  let best=null, bestDist=Infinity;
+  reachableStaff.forEach(iata=>{
+    const ap=airports[iata]; if(!ap) return;
+    const d=haversineKm(lat,lon,ap.lat,ap.lon);
+    if(d<bestDist){bestDist=d;best=iata;}
+  });
+  return best;
+}
+
+function tryGeolocation(){
+  if(!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const {latitude:lat, longitude:lon} = pos.coords;
+    // Wait until indexes are built (poll briefly)
+    const check = setInterval(()=>{
+      if(reachableStaff.size===0) return;
+      clearInterval(check);
+      const iata = findNearestStaffAirport(lat,lon);
+      if(!iata) return;
+      const ap = airports[iata];
+      if(!ap) return;
+      // Pre-fill as route origin
+      routeOrigin={iata,ap};
+      const vEl=document.getElementById('route-origin-val');
+      const sEl=document.getElementById('route-origin-sub');
+      const cEl=document.getElementById('route-origin-clear');
+      const bEl=document.getElementById('route-origin-box');
+      if(vEl){vEl.textContent=`${iata} - ${ap.name}`;vEl.classList.remove('placeholder');}
+      if(sEl){sEl.textContent=`${ap.city}, ${ap.country}`;sEl.style.display='block';}
+      if(cEl) cEl.classList.add('visible');
+      if(bEl) bEl.classList.add('has-value');
+      document.getElementById('route-search-btn').disabled=!(routeOrigin&&routeDest);
+      // Also show a subtle status message
+      setStatus(`Nearest staff airport: ${iata} - ${ap.name}`);
+      setTimeout(()=>setStatus(`${Object.keys(airports).length.toLocaleString()} airports | ${permittedAirlines.length} staff airlines`),4000);
+    },200);
+  }, ()=>{/* silently ignore denied */}, {timeout:8000});
+}
+
+/* ── Mobile view toggle ── */
+let mobileMapMode = false;
+function toggleMobileView(){
+  mobileMapMode = !mobileMapMode;
+  const panel = document.getElementById('panel');
+  const mapWrap = document.getElementById('map-wrap');
+  const btn = document.getElementById('mobile-toggle');
+  if(mobileMapMode){
+    panel.classList.add('map-mode');
+    mapWrap.classList.add('map-mode');
+    btn.innerHTML = '&#9776; Panel';
+    setTimeout(()=>map.invalidateSize(),50);
+  } else {
+    panel.classList.remove('map-mode');
+    mapWrap.classList.remove('map-mode');
+    btn.innerHTML = '&#9993; Map';
+  }
+}
 
 init();
 </script>
