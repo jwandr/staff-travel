@@ -4,6 +4,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Standby Departures</title>
+  <link rel="icon" type="image/png" href="./standy-departures-logo-colour.png"/>
+  <link rel="apple-touch-icon" href="./standy-departures-logo-colour.png"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -232,26 +234,41 @@
     *{scrollbar-width:thin;scrollbar-color:var(--border) transparent}
 
     /* ══ MOBILE (≤ 767px) ══════════════════════════════════════
-       Stack layout: panel fills screen, map hidden behind a toggle.
-       A floating button switches between panel and map views.
+       Two modes: panel mode (default) and map mode.
+       The toggle button is always fixed on screen regardless of mode.
     ══════════════════════════════════════════════════════════ */
     #mobile-toggle{display:none}
+
     @media (max-width:767px){
-      #app{flex-direction:column}
-      #panel{flex:0 0 auto;width:100%;max-width:100%;height:auto;flex:1 1 0;min-height:0;border-right:none;border-bottom:1px solid var(--border)}
-      #map-wrap{flex:1 1 0;min-height:0;display:none}
-      #panel.map-mode{display:none}
-      #map-wrap.map-mode{display:block}
-      #mobile-toggle{
-        display:flex;align-items:center;gap:8px;
-        position:fixed;bottom:20px;right:20px;z-index:2000;
-        background:var(--blue);color:white;border:none;border-radius:24px;
-        padding:10px 18px;font-size:13px;font-weight:700;
-        font-family:var(--font-ui);cursor:pointer;
-        box-shadow:0 4px 16px rgba(26,107,250,0.4);
+      /* App stacks vertically; each child fills the full screen */
+      #app{flex-direction:column;position:relative}
+
+      /* Panel mode (default): panel fills screen, map hidden */
+      #panel{
+        flex:1 1 0;width:100%;max-width:100%;
+        height:100%;min-height:0;
+        border-right:none;border-bottom:none;
       }
-      /* On mobile, clear-btn sits higher to avoid overlap with toggle */
-      #clear-btn{bottom:70px}
+      #map-wrap{display:none;flex:1 1 0;min-height:0;height:100%}
+
+      /* Map mode: map fills screen, panel hidden */
+      #panel.map-mode{display:none}
+      #map-wrap.map-mode{display:flex;flex-direction:column}
+
+      /* Toggle button — always fixed to viewport, never inside a hidden parent */
+      #mobile-toggle{
+        display:flex;align-items:center;gap:6px;
+        position:fixed;bottom:20px;right:20px;
+        z-index:9999;
+        background:var(--blue);color:white;
+        border:none;border-radius:24px;
+        padding:11px 20px;font-size:14px;font-weight:700;
+        font-family:var(--font-ui);cursor:pointer;
+        box-shadow:0 4px 20px rgba(26,107,250,0.45);
+        -webkit-tap-highlight-color:transparent;
+      }
+      /* Clear button sits above the toggle */
+      #clear-btn{bottom:76px}
     }
 
   </style>
@@ -438,8 +455,9 @@
       <div class="legend-row"><div class="legend-line" style="background:var(--col-other)"></div><span>Non-staff route</span></div>
     </div>
     <button id="clear-btn" onclick="clearSelection()">&#10005; Clear</button>
-    <button id="mobile-toggle" onclick="toggleMobileView()">&#9993; Map</button>
   </div>
+  <!-- Mobile toggle: direct child of #app so it's never hidden with map-wrap -->
+  <button id="mobile-toggle" onclick="toggleMobileView()">&#9993; Map</button>
 </div>
 
 <script>
@@ -1307,7 +1325,8 @@ function toggleMobileView(){
     panel.classList.add('map-mode');
     mapWrap.classList.add('map-mode');
     btn.innerHTML = '&#9776; Panel';
-    setTimeout(()=>map.invalidateSize(),50);
+    // Let the browser paint the map container before Leaflet measures it
+    setTimeout(()=>{ map.invalidateSize(); }, 80);
   } else {
     panel.classList.remove('map-mode');
     mapWrap.classList.remove('map-mode');
