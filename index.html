@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
@@ -14,9 +15,13 @@
       --bg:#f0f4f8; --surface:#ffffff; --surface2:#f7f9fb;
       --border:#e4e9f0; --border-mid:#c8d3e0;
       --blue:#1a6bfa; --blue-dark:#1254d4; --blue-soft:rgba(26,107,250,0.07); --blue-mid:rgba(26,107,250,0.14);
-      --orange:#e8650a; --orange-soft:rgba(232,101,10,0.08);
-      --purple:#7c3aed; --purple-soft:rgba(124,58,237,0.08);
-      --green:#059669;
+      /* CANONICAL COLOURS — used everywhere */
+      --col-economy:#0ea5e9;    /* sky blue  */
+      --col-business:#7c3aed;   /* purple    */
+      --col-other:#e8650a;      /* orange    */
+      --col-economy-soft:rgba(14,165,233,0.08);
+      --col-business-soft:rgba(124,58,237,0.08);
+      --col-other-soft:rgba(232,101,10,0.08);
       --text:#0f1c2e; --text-dim:#3d5166; --text-muted:#8899aa;
       --font-ui:'Plus Jakarta Sans',sans-serif; --font-mono:'JetBrains Mono',monospace;
       --panel-w:380px; --r:10px; --r-sm:6px;
@@ -25,187 +30,197 @@
     html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:14px}
     #app{display:flex;height:100vh;width:100vw}
 
-    /* Panel */
-    #panel{width:var(--panel-w);min-width:var(--panel-w);height:100%;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:1000;overflow:hidden;box-shadow:3px 0 16px rgba(0,0,0,0.06)}
-    #panel-header{padding:16px 18px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
-    .logo-row{display:flex;align-items:center;gap:10px}
-    .logo-mark{width:36px;height:36px;background:var(--blue);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-    .logo-mark svg{width:22px;height:22px;fill:white}
-    .logo-text{display:flex;flex-direction:column;line-height:1.1}
-    .logo-title{font-size:17px;font-weight:800;color:var(--text);letter-spacing:-0.02em}
-    .logo-sub{font-size:10px;font-weight:500;color:var(--text-muted);font-family:var(--font-mono);letter-spacing:0.05em;margin-top:1px}
+```
+/* ── Panel ── */
+#panel{width:var(--panel-w);min-width:var(--panel-w);height:100%;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:1000;overflow:hidden;box-shadow:3px 0 16px rgba(0,0,0,0.06)}
+#panel-header{padding:14px 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.logo-row{display:flex;align-items:center;gap:10px}
+/* Custom logo image — falls back to SVG mark if image missing */
+.logo-img{height:38px;width:auto;object-fit:contain;display:block}
+.logo-img-fallback{display:none;width:36px;height:36px;background:var(--blue);border-radius:9px;align-items:center;justify-content:center;flex-shrink:0}
+.logo-img-fallback svg{width:22px;height:22px;fill:white}
+.logo-text{display:flex;flex-direction:column;line-height:1.1}
+.logo-title{font-size:17px;font-weight:800;color:var(--text);letter-spacing:-0.02em}
+.logo-sub{font-size:10px;font-weight:500;color:var(--text-muted);font-family:var(--font-mono);letter-spacing:0.05em;margin-top:1px}
 
-    /* Tabs */
-    #tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg);padding:0 12px;gap:2px}
-    .tab{flex:1;padding:10px 4px;font-size:12px;font-weight:600;font-family:var(--font-ui);color:var(--text-muted);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:color 0.15s,border-color 0.15s;white-space:nowrap}
-    .tab:hover{color:var(--text-dim)}
-    .tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+/* ── Tabs ── */
+#tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg);padding:0 12px;gap:2px}
+.tab{flex:1;padding:10px 4px;font-size:12px;font-weight:600;font-family:var(--font-ui);color:var(--text-muted);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:color 0.15s,border-color 0.15s;white-space:nowrap}
+.tab:hover{color:var(--text-dim)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
 
-    /* Panel body */
-    #panel-body{flex:1;overflow-y:auto;display:flex;flex-direction:column}
-    #panel-body::-webkit-scrollbar{width:4px}
-    #panel-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-    .tab-content{display:none;flex-direction:column;flex:1}
-    .tab-content.active{display:flex}
+/* ── Panel body ── */
+#panel-body{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+#panel-body::-webkit-scrollbar{width:4px}
+#panel-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.tab-content{display:none;flex-direction:column;flex:1}
+.tab-content.active{display:flex}
 
-    /* Search */
-    .search-wrap{padding:14px 14px 8px;flex-shrink:0}
-    .search-label{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;display:block}
-    .search-input-wrap{position:relative}
-    .search-input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:9px 34px 9px 11px;font-size:14px;font-family:var(--font-ui);color:var(--text);outline:none;transition:border-color 0.15s,box-shadow 0.15s}
-    .search-input::placeholder{color:var(--text-muted)}
-    .search-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
-    .search-icon{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;font-size:15px}
+/* ── Search ── */
+.search-wrap{padding:14px 14px 8px;flex-shrink:0}
+.search-label{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;display:block}
+.search-input-wrap{position:relative}
+.search-input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:9px 60px 9px 11px;font-size:14px;font-family:var(--font-ui);color:var(--text);outline:none;transition:border-color 0.15s,box-shadow 0.15s}
+.search-input::placeholder{color:var(--text-muted)}
+.search-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
+.search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--border-mid);border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;color:var(--text-dim);display:none;align-items:center;justify-content:center;line-height:1}
+.search-clear.visible{display:flex}
+.search-clear:hover{background:var(--border);color:var(--text)}
 
-    /* Controls */
-    .controls-wrap{padding:4px 14px 10px;flex-shrink:0;display:flex;flex-direction:column;gap:8px}
-    .toggle-row{display:flex;align-items:center;justify-content:space-between}
-    .toggle-label{font-size:12px;font-weight:600;color:var(--text-dim)}
-    .toggle-switch{position:relative;width:38px;height:22px}
-    .toggle-switch input{opacity:0;width:0;height:0}
-    .toggle-slider{position:absolute;inset:0;background:var(--border-mid);border-radius:22px;cursor:pointer;transition:background 0.2s}
-    .toggle-slider::before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;background:white;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
-    .toggle-switch input:checked+.toggle-slider{background:var(--blue)}
-    .toggle-switch input:checked+.toggle-slider::before{transform:translateX(16px)}
-    .filter-row{display:flex;flex-direction:column;gap:4px}
-    .filter-row-label{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted)}
-    .pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
-    .pill{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--border-mid);color:var(--text-dim);background:var(--surface);cursor:pointer;transition:all 0.15s}
-    .pill:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-soft)}
-    .pill.active{background:var(--blue);border-color:var(--blue);color:#fff}
+/* ── Controls ── */
+.controls-wrap{padding:4px 14px 10px;flex-shrink:0;display:flex;flex-direction:column;gap:8px}
+.toggle-row{display:flex;align-items:center;justify-content:space-between}
+.toggle-label{font-size:12px;font-weight:600;color:var(--text-dim)}
+.toggle-switch{position:relative;width:38px;height:22px}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--border-mid);border-radius:22px;cursor:pointer;transition:background 0.2s}
+.toggle-slider::before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;background:white;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
+.toggle-switch input:checked+.toggle-slider{background:var(--blue)}
+.toggle-switch input:checked+.toggle-slider::before{transform:translateX(16px)}
+.filter-row{display:flex;flex-direction:column;gap:4px}
+.filter-row-label{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted)}
+.pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
+.pill{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--border-mid);color:var(--text-dim);background:var(--surface);cursor:pointer;transition:all 0.15s}
+.pill:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-soft)}
+.pill.active{background:var(--blue);border-color:var(--blue);color:#fff}
 
-    /* Result list */
-    .result-list{flex:1;overflow-y:auto}
-    .result-list::-webkit-scrollbar{width:3px}
-    .result-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-    .result-count{padding:4px 14px;font-size:11px;font-family:var(--font-mono);color:var(--text-muted)}
-    .result-item{padding:10px 14px;cursor:pointer;border-left:3px solid transparent;transition:background 0.12s,border-color 0.12s;display:flex;align-items:center;gap:10px}
-    .result-item:hover{background:var(--surface2);border-left-color:var(--blue-mid)}
-    .result-item.selected{background:var(--blue-soft);border-left-color:var(--blue)}
-    .result-item.non-staff{opacity:0.55}
-    .result-logo{width:44px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg);border:1px solid var(--border);border-radius:5px;overflow:hidden;padding:2px}
-    .result-logo img{max-width:40px;max-height:24px;object-fit:contain;display:block}
-    .result-logo .logo-fallback{font-size:9px;font-weight:700;font-family:var(--font-mono);color:var(--text-muted)}
-    .result-body{flex:1;min-width:0}
-    .result-code{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--blue)}
-    .result-name{font-size:13px;font-weight:600;color:var(--text);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .result-meta{font-size:11px;font-family:var(--font-mono);color:var(--text-muted);margin-top:1px}
-    .result-classes{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
-    .class-badge{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;font-family:var(--font-ui);text-transform:uppercase}
-    .class-J{background:#dbeafe;color:#1e40af;border:1px solid #93c5fd}
-    .class-Y{background:#d1fae5;color:#065f46;border:1px solid #6ee7b7}
+/* ── Result list ── */
+.result-list{flex:1;overflow-y:auto}
+.result-list::-webkit-scrollbar{width:3px}
+.result-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.result-count{padding:4px 14px;font-size:11px;font-family:var(--font-mono);color:var(--text-muted)}
+.result-item{padding:10px 14px;cursor:pointer;border-left:3px solid transparent;transition:background 0.12s,border-color 0.12s;display:flex;align-items:center;gap:10px}
+.result-item:hover{background:var(--surface2);border-left-color:var(--blue-mid)}
+.result-item.selected{background:var(--blue-soft);border-left-color:var(--blue)}
+.result-logo{width:44px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg);border:1px solid var(--border);border-radius:5px;overflow:hidden;padding:2px}
+.result-logo img{max-width:40px;max-height:24px;object-fit:contain;display:block}
+.result-logo .logo-fallback{font-size:9px;font-weight:700;font-family:var(--font-mono);color:var(--text-muted)}
+.result-body{flex:1;min-width:0}
+.result-code{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--blue)}
+.result-name{font-size:13px;font-weight:600;color:var(--text);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.result-meta{font-size:11px;font-family:var(--font-mono);color:var(--text-muted);margin-top:1px}
+.result-classes{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+/* Staff badge shown on each airline row in the mixed list */
+.staff-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;text-transform:uppercase;letter-spacing:0.04em}
+.other-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;text-transform:uppercase;letter-spacing:0.04em}
+.class-badge{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;font-family:var(--font-ui);text-transform:uppercase}
+.class-J{background:rgba(124,58,237,0.1);color:#5b21b6;border:1px solid rgba(124,58,237,0.3)}
+.class-Y{background:rgba(14,165,233,0.1);color:#0369a1;border:1px solid rgba(14,165,233,0.3)}
 
-    /* Section dividers */
-    .list-section-header{padding:6px 14px 3px;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);background:var(--bg);border-bottom:1px solid var(--border)}
+/* ── Route finder ── */
+.route-finder-wrap{padding:14px;display:flex;flex-direction:column;gap:8px;flex-shrink:0}
+/* Route airport selector — now inline search + list like other tabs */
+.route-airport-box{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:10px 36px 10px 12px;cursor:pointer;transition:border-color 0.15s;position:relative}
+.route-airport-box:hover{border-color:var(--blue)}
+.route-airport-box.active-input{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
+.route-airport-box.has-value{background:white;border-color:var(--border-mid)}
+.route-box-label{font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px}
+.route-box-value{font-size:14px;font-weight:700;color:var(--text)}
+.route-box-value.placeholder{color:var(--text-muted);font-weight:400}
+.route-box-sub{font-size:11px;font-family:var(--font-mono);color:var(--text-dim);margin-top:1px}
+.route-box-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--border);border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;color:var(--text-dim);display:none;align-items:center;justify-content:center}
+.route-box-clear.visible{display:flex}
+.route-box-clear:hover{background:var(--border-mid)}
+.route-swap-btn{display:flex;align-items:center;justify-content:center;background:none;border:1.5px solid var(--border-mid);border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:14px;align-self:center;transition:all 0.15s;color:var(--text-dim)}
+.route-swap-btn:hover{border-color:var(--blue);color:var(--blue)}
+.route-options{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.route-max-toggle{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text-dim)}
+.route-search-btn{background:var(--blue);color:white;border:none;border-radius:var(--r-sm);padding:11px;font-size:14px;font-weight:700;font-family:var(--font-ui);cursor:pointer;transition:background 0.15s;flex:1}
+.route-search-btn:hover{background:var(--blue-dark)}
+.route-search-btn:disabled{background:var(--border-mid);color:var(--text-muted);cursor:not-allowed}
 
-    /* Route finder */
-    .route-finder-wrap{padding:14px;display:flex;flex-direction:column;gap:8px;flex-shrink:0}
-    .route-airport-box{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;cursor:pointer;transition:border-color 0.15s;position:relative}
-    .route-airport-box:hover{border-color:var(--blue)}
-    .route-airport-box.active-input{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
-    .route-airport-box.has-value{background:white;border-color:var(--border-mid)}
-    .route-box-label{font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px}
-    .route-box-value{font-size:14px;font-weight:700;color:var(--text)}
-    .route-box-value.placeholder{color:var(--text-muted);font-weight:400}
-    .route-box-sub{font-size:11px;font-family:var(--font-mono);color:var(--text-dim);margin-top:1px}
-    .route-box-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--border);border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;color:var(--text-dim);display:flex;align-items:center;justify-content:center}
-    .route-box-clear:hover{background:var(--border-mid)}
-    .route-swap-btn{display:flex;align-items:center;justify-content:center;background:none;border:1.5px solid var(--border-mid);border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:14px;align-self:center;transition:all 0.15s;color:var(--text-dim)}
-    .route-swap-btn:hover{border-color:var(--blue);color:var(--blue)}
-    .route-options{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .route-max-toggle{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text-dim)}
-    .route-search-btn{background:var(--blue);color:white;border:none;border-radius:var(--r-sm);padding:11px;font-size:14px;font-weight:700;font-family:var(--font-ui);cursor:pointer;transition:background 0.15s;flex:1}
-    .route-search-btn:hover{background:var(--blue-dark)}
-    .route-search-btn:disabled{background:var(--border-mid);color:var(--text-muted);cursor:not-allowed}
+/* Route airport picker — inline search + results (unified with main list style) */
+.route-picker-panel{display:none;flex-direction:column;flex:1;overflow:hidden}
+.route-picker-panel.visible{display:flex}
+.route-picker-header{padding:4px 14px 2px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);font-family:var(--font-mono);flex-shrink:0}
 
-    .route-picker-list{flex:1;overflow-y:auto;display:none}
-    .route-picker-list.visible{display:block}
-    .route-picker-header{padding:6px 14px 3px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);font-family:var(--font-mono)}
-    .route-results{flex:1;overflow-y:auto;display:none}
-    .route-results.visible{display:block}
+.route-results{flex:1;overflow-y:auto;display:none}
+.route-results.visible{display:block}
 
-    .route-result-card{margin:8px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s}
-    .route-result-card:hover{border-color:var(--blue);box-shadow:0 2px 10px var(--blue-soft)}
-    .route-result-card.selected{border-color:var(--purple);background:var(--purple-soft)}
-    .route-card-header{padding:9px 12px 7px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
-    .route-card-title{font-size:12px;font-weight:700;color:var(--text)}
-    .route-card-meta{display:flex;align-items:center;gap:6px}
-    .route-card-duration{font-size:11px;font-family:var(--font-mono);color:var(--text-dim);white-space:nowrap}
-    .route-card-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap}
-    .badge-direct{background:#d1fae5;color:#065f46;border:1px solid #6ee7b7}
-    .badge-1stop{background:#dbeafe;color:#1e40af;border:1px solid #93c5fd}
-    .badge-2stop{background:#ede9fe;color:#5b21b6;border:1px solid #c4b5fd}
-    .badge-3stop{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
-    .badge-4stop{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
-    .route-card-legs{padding:8px 12px}
-    .route-card-leg{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px}
-    .route-leg-left{display:flex;align-items:center;gap:5px;min-width:0;flex:1}
-    .route-leg-logo{width:26px;height:17px;object-fit:contain;flex-shrink:0}
-    .route-leg-name{font-size:11px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .route-leg-route{font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--text);white-space:nowrap}
-    .route-leg-arrow{color:var(--text-muted);font-size:10px}
-    .route-leg-dur{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);white-space:nowrap}
-    .route-leg-class{font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;text-transform:uppercase;white-space:nowrap}
-    .route-no-results{padding:24px 14px;text-align:center;color:var(--text-muted);font-size:13px;line-height:1.6}
+.route-result-card{margin:8px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s}
+.route-result-card:hover{border-color:var(--col-business);box-shadow:0 2px 10px var(--col-business-soft)}
+.route-result-card.selected{border-color:var(--col-business);background:var(--col-business-soft)}
+.route-card-header{padding:9px 12px 7px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.route-card-title{font-size:12px;font-weight:700;color:var(--text)}
+.route-card-meta{display:flex;align-items:center;gap:6px}
+.route-card-duration{font-size:11px;font-family:var(--font-mono);color:var(--text-dim);white-space:nowrap}
+.route-card-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.badge-direct{background:#d1fae5;color:#065f46;border:1px solid #6ee7b7}
+.badge-1stop{background:rgba(14,165,233,0.12);color:#0369a1;border:1px solid rgba(14,165,233,0.35)}
+.badge-2stop{background:rgba(124,58,237,0.1);color:#5b21b6;border:1px solid rgba(124,58,237,0.3)}
+.badge-3stop{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+.route-card-legs{padding:8px 12px}
+.route-card-leg{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px}
+.route-leg-left{display:flex;align-items:center;gap:5px;min-width:0;flex:0 0 auto;max-width:140px}
+.route-leg-logo{width:26px;height:17px;object-fit:contain;flex-shrink:0}
+.route-leg-name{font-size:11px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.route-leg-route{font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--text);white-space:nowrap}
+.route-leg-arrow{color:var(--text-muted);font-size:10px;flex-shrink:0}
+.route-leg-dur{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);white-space:nowrap;margin-left:auto}
+.route-leg-class{font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
+.route-no-results{padding:24px 14px;text-align:center;color:var(--text-muted);font-size:13px;line-height:1.6}
 
-    /* Info panel */
-    #info-panel{border-top:1px solid var(--border);padding:14px 16px;flex-shrink:0;background:var(--bg)}
-    #info-panel.empty .info-placeholder{display:flex}
-    #info-panel.empty .info-content{display:none}
-    #info-panel:not(.empty) .info-placeholder{display:none}
-    #info-panel:not(.empty) .info-content{display:block}
-    .info-placeholder{font-size:12px;color:var(--text-muted);line-height:1.6;align-items:center;gap:8px}
-    .info-placeholder-icon{font-size:20px}
-    .info-title{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px}
-    .info-name{font-size:15px;font-weight:700;color:var(--text);line-height:1.2}
-    .info-code{font-family:var(--font-mono);font-size:11px;color:var(--blue);margin:2px 0 8px}
-    .info-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
-    .info-stat-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 10px}
-    .info-stat-label{font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:0.05em;text-transform:uppercase}
-    .info-stat-val{font-size:22px;font-weight:800;color:var(--blue);font-family:var(--font-mono);margin-top:1px;line-height:1}
+/* ── Info panel ── */
+#info-panel{border-top:1px solid var(--border);padding:14px 16px;flex-shrink:0;background:var(--bg)}
+#info-panel.empty .info-placeholder{display:flex}
+#info-panel.empty .info-content{display:none}
+#info-panel:not(.empty) .info-placeholder{display:none}
+#info-panel:not(.empty) .info-content{display:block}
+.info-placeholder{font-size:12px;color:var(--text-muted);line-height:1.6;align-items:center;gap:8px}
+.info-placeholder-icon{font-size:20px}
+.info-title{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px}
+.info-name{font-size:15px;font-weight:700;color:var(--text);line-height:1.2}
+.info-code{font-family:var(--font-mono);font-size:11px;color:var(--blue);margin:2px 0 8px}
+.info-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.info-stat-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 10px}
+.info-stat-label{font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:0.05em;text-transform:uppercase}
+.info-stat-val{font-size:22px;font-weight:800;color:var(--blue);font-family:var(--font-mono);margin-top:1px;line-height:1}
 
-    /* Map */
-    #map-wrap{flex:1;position:relative;overflow:hidden}
-    #map{width:100%;height:100%}
-    .leaflet-container{background:#e8eef5}
-    #map-status{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.95);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:12px;font-family:var(--font-mono);color:var(--text-dim);z-index:500;white-space:nowrap;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+/* ── Map ── */
+#map-wrap{flex:1;position:relative;overflow:hidden}
+#map{width:100%;height:100%}
+.leaflet-container{background:#e8eef5}
+#map-status{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.95);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:12px;font-family:var(--font-mono);color:var(--text-dim);z-index:500;white-space:nowrap;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
 
-    /* Loading */
-    #loading-overlay{position:absolute;inset:0;background:#f0f4f8;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000;transition:opacity 0.4s}
-    #loading-overlay.hidden{opacity:0;pointer-events:none}
-    .loading-mark{width:52px;height:52px;background:var(--blue);border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;animation:pulse 1.5s ease-in-out infinite}
-    .loading-mark svg{width:28px;height:28px;fill:white}
-    @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(0.94);opacity:0.8}}
-    .loading-text{font-size:15px;font-weight:700;color:var(--text)}
-    .loading-sub{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-top:6px}
-    .loading-bar-wrap{width:200px;height:3px;background:var(--border);border-radius:2px;margin-top:18px;overflow:hidden}
-    .loading-bar{height:100%;background:var(--blue);border-radius:2px;width:0%;transition:width 0.3s}
+/* ── Loading ── */
+#loading-overlay{position:absolute;inset:0;background:#f0f4f8;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000;transition:opacity 0.4s}
+#loading-overlay.hidden{opacity:0;pointer-events:none}
+.loading-mark{width:52px;height:52px;background:var(--blue);border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;animation:pulse 1.5s ease-in-out infinite}
+.loading-mark svg{width:28px;height:28px;fill:white}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(0.94);opacity:0.8}}
+.loading-text{font-size:15px;font-weight:700;color:var(--text)}
+.loading-sub{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-top:6px}
+.loading-bar-wrap{width:200px;height:3px;background:var(--border);border-radius:2px;margin-top:18px;overflow:hidden}
+.loading-bar{height:100%;background:var(--blue);border-radius:2px;width:0%;transition:width 0.3s}
 
-    /* Buttons */
-    #clear-btn{position:absolute;bottom:20px;right:20px;z-index:500;background:white;border:1.5px solid var(--border-mid);border-radius:20px;padding:7px 18px;font-size:13px;font-weight:600;font-family:var(--font-ui);color:var(--text-dim);cursor:pointer;transition:all 0.15s;display:none;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
-    #clear-btn:hover{border-color:var(--blue);color:var(--blue)}
-    #clear-btn.visible{display:block}
+/* ── Buttons ── */
+#clear-btn{position:absolute;bottom:20px;right:20px;z-index:500;background:white;border:1.5px solid var(--border-mid);border-radius:20px;padding:7px 18px;font-size:13px;font-weight:600;font-family:var(--font-ui);color:var(--text-dim);cursor:pointer;transition:all 0.15s;display:none;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+#clear-btn:hover{border-color:var(--blue);color:var(--blue)}
+#clear-btn.visible{display:block}
 
-    /* Legend */
-    #legend{position:absolute;bottom:20px;left:20px;z-index:500;background:rgba(255,255,255,0.96);border:1px solid var(--border);border-radius:var(--r);padding:11px 14px;font-size:12px;color:var(--text-dim);box-shadow:0 2px 8px rgba(0,0,0,0.08)}
-    .legend-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:8px}
-    .legend-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
-    .legend-row:last-child{margin-bottom:0}
-    .legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.25)}
-    .legend-line{width:24px;height:2.5px;flex-shrink:0;border-radius:2px}
+/* ── Legend ── */
+#legend{position:absolute;bottom:20px;left:20px;z-index:500;background:rgba(255,255,255,0.96);border:1px solid var(--border);border-radius:var(--r);padding:11px 14px;font-size:12px;color:var(--text-dim);box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+.legend-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:8px}
+.legend-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.legend-row:last-child{margin-bottom:0}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.25)}
+.legend-line{width:24px;height:2.5px;flex-shrink:0;border-radius:2px}
 
-    /* Markers */
-    .ap-marker{border-radius:50%;border:2.5px solid white;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
-    .ap-hub{width:14px;height:14px;background:#1a6bfa;box-shadow:0 2px 8px rgba(26,107,250,0.55)}
-    .ap-staff{width:12px;height:12px;background:#1a6bfa;box-shadow:0 1px 5px rgba(26,107,250,0.45)}
-    .ap-other{width:12px;height:12px;background:#e8650a;box-shadow:0 1px 5px rgba(232,101,10,0.45)}
-    .ap-route{width:14px;height:14px;background:#7c3aed;box-shadow:0 2px 8px rgba(124,58,237,0.5)}
-    .ap-waypoint{width:11px;height:11px;background:#6d28d9;box-shadow:0 1px 4px rgba(109,40,217,0.4)}
+/* ── Markers ── */
+.ap-marker{border-radius:50%;border:2.5px solid white;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+.ap-hub{width:14px;height:14px;background:var(--blue);box-shadow:0 2px 8px rgba(26,107,250,0.55)}
+.ap-economy{width:12px;height:12px;background:var(--col-economy);box-shadow:0 1px 5px rgba(14,165,233,0.5)}
+.ap-business{width:12px;height:12px;background:var(--col-business);box-shadow:0 1px 5px rgba(124,58,237,0.5)}
+.ap-other{width:12px;height:12px;background:var(--col-other);box-shadow:0 1px 5px rgba(232,101,10,0.45)}
+.ap-route{width:14px;height:14px;background:var(--col-business);box-shadow:0 2px 8px rgba(124,58,237,0.55)}
+.ap-waypoint{width:11px;height:11px;background:#6d28d9;box-shadow:0 1px 4px rgba(109,40,217,0.4)}
 
-    /* Error */
-    #error-banner{display:none;position:absolute;top:56px;left:50%;transform:translateX(-50%);background:#fff1f2;border:1px solid #fca5a5;border-radius:var(--r-sm);padding:8px 16px;font-size:12px;color:#991b1b;z-index:600;max-width:440px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
-    #error-banner.visible{display:block}
-    *{scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+/* ── Error ── */
+#error-banner{display:none;position:absolute;top:56px;left:50%;transform:translateX(-50%);background:#fff1f2;border:1px solid #fca5a5;border-radius:var(--r-sm);padding:8px 16px;font-size:12px;color:#991b1b;z-index:600;max-width:440px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+#error-banner.visible{display:block}
+*{scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+```
+
   </style>
 </head>
 <body>
@@ -213,7 +228,10 @@
   <div id="panel">
     <div id="panel-header">
       <div class="logo-row">
-        <div class="logo-mark">
+        <!-- Custom logo: references file in repo root. Falls back to SVG if missing -->
+        <img class="logo-img" src="./standy-departures-logo-colour.png" alt="Standby Departures"
+             onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'"/>
+        <div class="logo-img-fallback" id="logo-fallback">
           <svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0 0 11.5 2 1.5 1.5 0 0 0 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>
         </div>
         <div class="logo-text">
@@ -223,144 +241,150 @@
       </div>
     </div>
 
-    <div id="tabs">
-      <button class="tab active" data-tab="airports">&#9992; Airports</button>
-      <button class="tab" data-tab="airlines">&#9671; Airlines</button>
-      <button class="tab" data-tab="routes">&#8644; Routes</button>
+```
+<div id="tabs">
+  <button class="tab active" data-tab="airports">&#9992; Airports</button>
+  <button class="tab" data-tab="airlines">&#9671; Airlines</button>
+  <button class="tab" data-tab="routes">&#8644; Routes</button>
+</div>
+
+<div id="panel-body">
+
+  <!-- ══ AIRPORTS TAB ══ -->
+  <div id="tab-airports" class="tab-content active">
+    <div class="search-wrap">
+      <span class="search-label">Search airport</span>
+      <div class="search-input-wrap">
+        <input class="search-input" id="airport-search" type="text" placeholder="Name, city or IATA code..." autocomplete="off"/>
+        <button class="search-clear" id="airport-search-clear" onclick="clearSearch('airport')" title="Clear">&#10005;</button>
+      </div>
     </div>
-
-    <div id="panel-body">
-
-      <!-- AIRPORTS TAB -->
-      <div id="tab-airports" class="tab-content active">
-        <div class="search-wrap">
-          <span class="search-label">Search airport</span>
-          <div class="search-input-wrap">
-            <input class="search-input" id="airport-search" type="text" placeholder="Name, city or IATA code..." autocomplete="off"/>
-            <span class="search-icon">&#8981;</span>
-          </div>
-        </div>
-        <div class="controls-wrap">
-          <div class="toggle-row">
-            <span class="toggle-label">Show all airlines on map</span>
-            <label class="toggle-switch"><input type="checkbox" id="all-airlines-toggle"/><span class="toggle-slider"></span></label>
-          </div>
-          <div class="filter-row">
-            <span class="filter-row-label">Show routes for class</span>
-            <div class="pills" id="airport-class-pills">
-              <button class="pill active" data-class="all">All</button>
-              <button class="pill" data-class="Y">Economy</button>
-              <button class="pill" data-class="J">Business</button>
-            </div>
-          </div>
-        </div>
-        <div class="result-count" id="airport-count"></div>
-        <div class="result-list" id="airport-list"></div>
+    <div class="controls-wrap">
+      <div class="toggle-row">
+        <span class="toggle-label">Show all airlines on map</span>
+        <label class="toggle-switch"><input type="checkbox" id="all-airlines-toggle"/><span class="toggle-slider"></span></label>
       </div>
-
-      <!-- AIRLINES TAB -->
-      <div id="tab-airlines" class="tab-content">
-        <div class="search-wrap">
-          <span class="search-label">Search airline</span>
-          <div class="search-input-wrap">
-            <input class="search-input" id="airline-search" type="text" placeholder="Airline name or IATA code..." autocomplete="off"/>
-            <span class="search-icon">&#8981;</span>
-          </div>
-        </div>
-        <div class="controls-wrap">
-          <div class="toggle-row">
-            <span class="toggle-label">Show all airlines</span>
-            <label class="toggle-switch"><input type="checkbox" id="show-all-airlines-toggle"/><span class="toggle-slider"></span></label>
-          </div>
-          <div class="filter-row">
-            <span class="filter-row-label">Filter by class</span>
-            <div class="pills" id="airline-class-pills">
-              <button class="pill active" data-class="all">All</button>
-              <button class="pill" data-class="Y">Economy</button>
-              <button class="pill" data-class="J">Business</button>
-            </div>
-          </div>
-        </div>
-        <div class="result-count" id="airline-count"></div>
-        <div class="result-list" id="airline-list"></div>
-      </div>
-
-      <!-- ROUTES TAB -->
-      <div id="tab-routes" class="tab-content">
-        <div class="route-finder-wrap">
-          <span class="search-label">Find staff travel routes</span>
-          <div class="route-airport-box" id="route-origin-box" onclick="activateRoutePicker('origin')">
-            <div class="route-box-label">From</div>
-            <div class="route-box-value placeholder" id="route-origin-val">Select departure airport</div>
-            <div class="route-box-sub" id="route-origin-sub" style="display:none"></div>
-            <button class="route-box-clear" id="route-origin-clear" style="display:none" onclick="clearRouteEnd(event,'origin')">&#10005;</button>
-          </div>
-          <button class="route-swap-btn" onclick="swapRouteAirports()">&#8645;</button>
-          <div class="route-airport-box" id="route-dest-box" onclick="activateRoutePicker('dest')">
-            <div class="route-box-label">To</div>
-            <div class="route-box-value placeholder" id="route-dest-val">Select arrival airport</div>
-            <div class="route-box-sub" id="route-dest-sub" style="display:none"></div>
-            <button class="route-box-clear" id="route-dest-clear" style="display:none" onclick="clearRouteEnd(event,'dest')">&#10005;</button>
-          </div>
-          <div class="controls-wrap" style="padding:0">
-            <div class="filter-row">
-              <span class="filter-row-label">Filter by class</span>
-              <div class="pills" id="route-class-pills">
-                <button class="pill active" data-class="all">All</button>
-                <button class="pill" data-class="Y">Economy</button>
-                <button class="pill" data-class="J">Business</button>
-              </div>
-            </div>
-          </div>
-          <div class="route-options">
-            <div class="route-max-toggle">
-              <span>Max stops:</span>
-              <select id="max-stops-select" style="border:1.5px solid var(--border-mid);border-radius:5px;padding:3px 6px;font-size:12px;font-family:var(--font-ui);color:var(--text);background:var(--surface);cursor:pointer">
-                <option value="1">Direct only</option>
-                <option value="2">1 stop</option>
-                <option value="3" selected>2 stops</option>
-                <option value="4">3 stops</option>
-                <option value="5">4 stops</option>
-              </select>
-            </div>
-            <button class="route-search-btn" id="route-search-btn" disabled onclick="findRoutes()">Find Routes</button>
-          </div>
-        </div>
-
-        <div class="route-picker-list" id="route-picker-list">
-          <div class="search-wrap" style="padding-top:0">
-            <div class="search-input-wrap">
-              <input class="search-input" id="route-picker-search" type="text" placeholder="Search airports..." autocomplete="off"/>
-              <span class="search-icon">&#8981;</span>
-            </div>
-          </div>
-          <div class="route-picker-header" id="route-picker-header"></div>
-          <div class="result-list" id="route-picker-airports"></div>
-        </div>
-
-        <div class="route-results" id="route-results">
-          <div class="result-count" id="route-results-count"></div>
-          <div id="route-results-list"></div>
-        </div>
-      </div>
-
-    </div><!-- /panel-body -->
-
-    <div id="info-panel" class="empty">
-      <div class="info-placeholder">
-        <span class="info-placeholder-icon">&#9992;</span>
-        <span>Select an airport, airline or route</span>
-      </div>
-      <div class="info-content">
-        <div class="info-title" id="info-type-label">Selected</div>
-        <div class="info-name" id="info-name"></div>
-        <div class="info-code" id="info-code"></div>
-        <div class="info-stats">
-          <div class="info-stat-box"><div class="info-stat-label">Routes</div><div class="info-stat-val" id="info-routes">-</div></div>
-          <div class="info-stat-box"><div class="info-stat-label">Airports</div><div class="info-stat-val" id="info-airports">-</div></div>
+      <div class="filter-row">
+        <span class="filter-row-label">Show routes for class</span>
+        <div class="pills" id="airport-class-pills">
+          <button class="pill active" data-class="all">All</button>
+          <button class="pill" data-class="Y" style="border-color:rgba(14,165,233,0.4);color:#0369a1">Economy</button>
+          <button class="pill" data-class="J" style="border-color:rgba(124,58,237,0.4);color:#5b21b6">Business</button>
         </div>
       </div>
     </div>
+    <div class="result-count" id="airport-count"></div>
+    <div class="result-list" id="airport-list"></div>
+  </div>
+
+  <!-- ══ AIRLINES TAB ══ -->
+  <div id="tab-airlines" class="tab-content">
+    <div class="search-wrap">
+      <span class="search-label">Search airline</span>
+      <div class="search-input-wrap">
+        <input class="search-input" id="airline-search" type="text" placeholder="Airline name or IATA code..." autocomplete="off"/>
+        <button class="search-clear" id="airline-search-clear" onclick="clearSearch('airline')" title="Clear">&#10005;</button>
+      </div>
+    </div>
+    <div class="controls-wrap">
+      <div class="toggle-row">
+        <span class="toggle-label">Include non-staff airlines</span>
+        <label class="toggle-switch"><input type="checkbox" id="show-all-airlines-toggle"/><span class="toggle-slider"></span></label>
+      </div>
+      <div class="filter-row">
+        <span class="filter-row-label">Filter staff airlines by class</span>
+        <div class="pills" id="airline-class-pills">
+          <button class="pill active" data-class="all">All</button>
+          <button class="pill" data-class="Y" style="border-color:rgba(14,165,233,0.4);color:#0369a1">Economy</button>
+          <button class="pill" data-class="J" style="border-color:rgba(124,58,237,0.4);color:#5b21b6">Business</button>
+        </div>
+      </div>
+    </div>
+    <div class="result-count" id="airline-count"></div>
+    <div class="result-list" id="airline-list"></div>
+  </div>
+
+  <!-- ══ ROUTES TAB ══ -->
+  <div id="tab-routes" class="tab-content">
+    <!-- Controls always visible at top -->
+    <div class="route-finder-wrap">
+      <!-- From airport -->
+      <div class="route-airport-box" id="route-origin-box" onclick="activateRoutePicker('origin')">
+        <div class="route-box-label">From</div>
+        <div class="route-box-value placeholder" id="route-origin-val">Select departure airport</div>
+        <div class="route-box-sub" id="route-origin-sub" style="display:none"></div>
+        <button class="route-box-clear" id="route-origin-clear" onclick="clearRouteEnd(event,'origin')">&#10005;</button>
+      </div>
+      <button class="route-swap-btn" onclick="swapRouteAirports()">&#8645;</button>
+      <!-- To airport -->
+      <div class="route-airport-box" id="route-dest-box" onclick="activateRoutePicker('dest')">
+        <div class="route-box-label">To</div>
+        <div class="route-box-value placeholder" id="route-dest-val">Select arrival airport</div>
+        <div class="route-box-sub" id="route-dest-sub" style="display:none"></div>
+        <button class="route-box-clear" id="route-dest-clear" onclick="clearRouteEnd(event,'dest')">&#10005;</button>
+      </div>
+      <div class="controls-wrap" style="padding:0">
+        <div class="filter-row">
+          <span class="filter-row-label">Filter by class</span>
+          <div class="pills" id="route-class-pills">
+            <button class="pill active" data-class="all">All</button>
+            <button class="pill" data-class="Y" style="border-color:rgba(14,165,233,0.4);color:#0369a1">Economy</button>
+            <button class="pill" data-class="J" style="border-color:rgba(124,58,237,0.4);color:#5b21b6">Business</button>
+          </div>
+        </div>
+      </div>
+      <div class="route-options">
+        <div class="route-max-toggle">
+          <span>Max stops:</span>
+          <select id="max-stops-select" style="border:1.5px solid var(--border-mid);border-radius:5px;padding:3px 6px;font-size:12px;font-family:var(--font-ui);color:var(--text);background:var(--surface);cursor:pointer">
+            <option value="1">Direct only</option>
+            <option value="2">1 stop</option>
+            <option value="3" selected>2 stops</option>
+            <option value="4">3 stops</option>
+          </select>
+        </div>
+        <button class="route-search-btn" id="route-search-btn" disabled onclick="findRoutes()">Find Routes</button>
+      </div>
+    </div>
+
+    <!-- Airport picker — unified search+list, shown when selecting an airport -->
+    <div class="route-picker-panel" id="route-picker-panel">
+      <div class="search-wrap" style="padding-top:4px;padding-bottom:4px">
+        <div class="search-input-wrap">
+          <input class="search-input" id="route-picker-search" type="text" placeholder="Search airports..." autocomplete="off"/>
+          <button class="search-clear" id="route-picker-clear" onclick="clearRoutePickerSearch()" title="Clear">&#10005;</button>
+        </div>
+      </div>
+      <div class="route-picker-header" id="route-picker-header">Selecting departure</div>
+      <div class="result-list" id="route-picker-airports"></div>
+    </div>
+
+    <!-- Route results -->
+    <div class="route-results" id="route-results">
+      <div class="result-count" id="route-results-count"></div>
+      <div id="route-results-list"></div>
+    </div>
+  </div>
+
+</div><!-- /panel-body -->
+
+<div id="info-panel" class="empty">
+  <div class="info-placeholder">
+    <span class="info-placeholder-icon">&#9992;</span>
+    <span>Select an airport, airline or route</span>
+  </div>
+  <div class="info-content">
+    <div class="info-title" id="info-type-label">Selected</div>
+    <div class="info-name" id="info-name"></div>
+    <div class="info-code" id="info-code"></div>
+    <div class="info-stats">
+      <div class="info-stat-box"><div class="info-stat-label">Routes</div><div class="info-stat-val" id="info-routes">-</div></div>
+      <div class="info-stat-box"><div class="info-stat-label">Airports</div><div class="info-stat-val" id="info-airports">-</div></div>
+    </div>
+  </div>
+</div>
+```
+
   </div><!-- /panel -->
 
   <div id="map-wrap">
@@ -375,18 +399,29 @@
     <div id="error-banner"></div>
     <div id="legend">
       <div class="legend-title">Legend</div>
-      <div class="legend-row"><div class="legend-dot" style="background:#1a6bfa"></div><span>Origin / hub</span></div>
-      <div class="legend-row"><div class="legend-dot" style="background:#1a6bfa"></div><span>Staff travel destination</span></div>
-      <div class="legend-row"><div class="legend-dot" style="background:#e8650a"></div><span>Other airline destination</span></div>
-      <div class="legend-row"><div class="legend-line" style="background:#1a6bfa"></div><span>Staff route (Economy)</span></div>
-      <div class="legend-row"><div class="legend-line" style="background:#0ea5e9"></div><span>Staff route (Business)</span></div>
-      <div class="legend-row"><div class="legend-line" style="background:#e8650a"></div><span>Other airline route</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--blue)"></div><span>Origin / hub</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--col-economy)"></div><span>Economy destination</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--col-business)"></div><span>Business destination</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--col-other)"></div><span>Non-staff destination</span></div>
+      <div class="legend-row"><div class="legend-line" style="background:var(--col-economy)"></div><span>Economy route</span></div>
+      <div class="legend-row"><div class="legend-line" style="background:var(--col-business)"></div><span>Business route</span></div>
+      <div class="legend-row"><div class="legend-line" style="background:var(--col-other)"></div><span>Non-staff route</span></div>
     </div>
     <button id="clear-btn" onclick="clearSelection()">&#10005; Clear</button>
   </div>
 </div>
 
 <script>
+/* ================================================================
+   CANONICAL COLOURS (mirror CSS variables for JS use)
+================================================================ */
+const C = {
+  economy:  '#0ea5e9',
+  business: '#7c3aed',
+  other:    '#e8650a',
+  hub:      '#1a6bfa',
+};
+
 /* ================================================================
    CONFIG
 ================================================================ */
@@ -397,33 +432,21 @@ const CONFIG = {
   logoBase: 'https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/',
 };
 
-// Route leg colours by best class available
-const LEG_COLORS = { J:'#0ea5e9', Y:'#1a6bfa', other:'#7c3aed' };
-
 /* ================================================================
    STATE
 ================================================================ */
 let airports = {}, routeData = {}, permittedAirlines = [], permittedMap = {};
 let staffRouteIndex = {}, allRouteIndex = {};
-let staffAirportRoutes = {}; // {iata: {dest: [airlineNames]}}
-let allAirportRoutes   = {}; // {iata: {dest: [carrierObjs]}}
+let staffAirportRoutes = {}, allAirportRoutes = {};
 let reachableStaff = new Set();
-// staffAdj built once: {from: {to: {airlines:[names], bestClass:'J'|'Y', minKm, minMin}}}
-let staffAdj = {};
-// allAirlines: non-staff airlines discovered from routeData
-let allAirlinesInDataset = {}; // {iata_code: {name, routes}}
+let staffAdj = {}; // {from:{to:{airlines,bestClass,minMin,minKm}}}
+let allAirlinesInDataset = {};
 
 let currentSelection = null;
-let airportClassFilter = 'all';
-let airlineClassFilter = 'all';
-let routeClassFilter   = 'all';
-let showAllAirlines    = false; // airport map toggle
-let showAllAirlinesTab = false; // airlines tab toggle
-
+let airportClassFilter = 'all', airlineClassFilter = 'all', routeClassFilter = 'all';
+let showAllAirlines = false, showAllAirlinesTab = false;
 let airportSearch = '', airlineSearch = '';
-let routePickerTarget = null;
-let routeOrigin = null, routeDest = null, routePickerSearch = '';
-let selectedRouteIdx = -1;
+let routePickerTarget = null, routeOrigin = null, routeDest = null, routePickerSearch = '';
 let map, routeLayerGroup, markerLayerGroup;
 
 /* ================================================================
@@ -432,20 +455,14 @@ let map, routeLayerGroup, markerLayerGroup;
 async function init() {
   initMap(); setLoadingBar(5);
   try {
-    setLoading('Loading permitted airlines...');
-    await loadPermittedAirlines(); setLoadingBar(20);
-    setLoading('Fetching airport data...');
-    await loadAirports(); setLoadingBar(55);
-    setLoading('Fetching route data...');
-    await loadRoutes(); setLoadingBar(85);
-    setLoading('Building indexes...');
-    buildIndexes(); setLoadingBar(100);
+    setLoading('Loading permitted airlines...'); await loadPermittedAirlines(); setLoadingBar(20);
+    setLoading('Fetching airport data...'); await loadAirports(); setLoadingBar(55);
+    setLoading('Fetching route data...'); await loadRoutes(); setLoadingBar(85);
+    setLoading('Building indexes...'); buildIndexes(); setLoadingBar(100);
     buildAirportList(); buildAirlineList();
     setTimeout(hideLoading, 400);
     setStatus(`${Object.keys(airports).length.toLocaleString()} airports | ${permittedAirlines.length} staff airlines`);
-  } catch(err) {
-    console.error(err); showError(`Failed to load: ${err.message}`); hideLoading();
-  }
+  } catch(err) { console.error(err); showError(`Failed to load: ${err.message}`); hideLoading(); }
 }
 
 /* ================================================================
@@ -469,7 +486,7 @@ function parseAirportsCsv(text) {
   const lines = text.split('\n');
   const idx = {};
   parseCsvLine(lines[0]).forEach((h,i) => { idx[h.replace(/"/g,'').trim()] = i; });
-  for (let i=1; i<lines.length; i++) {
+  for (let i = 1; i < lines.length; i++) {
     if (!lines[i].trim()) continue;
     const c = parseCsvLine(lines[i]);
     if (!c || c.length < 8) continue;
@@ -503,7 +520,6 @@ async function loadRoutes() {
 function buildIndexes() {
   const permittedCodes = new Set(permittedAirlines.map(a=>a.iata_code));
 
-  // Supplement airports from routeData
   Object.values(routeData).forEach(ap => {
     if (!ap.iata||airports[ap.iata]) return;
     const lat=parseFloat(ap.latitude), lon=parseFloat(ap.longitude);
@@ -512,7 +528,7 @@ function buildIndexes() {
   });
 
   Object.values(routeData).forEach(ap => {
-    const from = ap.iata;
+    const from=ap.iata;
     if (!from||!Array.isArray(ap.routes)) return;
     if (!allAirportRoutes[from]) allAirportRoutes[from]={};
     if (!staffAirportRoutes[from]) staffAirportRoutes[from]={};
@@ -524,27 +540,22 @@ function buildIndexes() {
       allAirportRoutes[from][to].push(...route.carriers);
 
       route.carriers.forEach(carrier => {
-        const code=carrier.iata;
-        if (!code) return;
-        // Track all airlines in dataset for the airlines tab
+        const code=carrier.iata; if (!code) return;
         if (!allAirlinesInDataset[code]) allAirlinesInDataset[code]={name:carrier.name||code,count:0};
         allAirlinesInDataset[code].count++;
-        // All index
         if (!allRouteIndex[code]) allRouteIndex[code]=[];
         allRouteIndex[code].push({from,to});
-        // Staff
+
         if (permittedCodes.has(code)) {
           if (!staffRouteIndex[code]) staffRouteIndex[code]=[];
           staffRouteIndex[code].push({from,to,km,min});
           if (!staffAirportRoutes[from][to]) staffAirportRoutes[from][to]=[];
           if (!staffAirportRoutes[from][to].includes(carrier.name||code))
             staffAirportRoutes[from][to].push(carrier.name||code);
-          // staffAdj with duration + best class
           if (!staffAdj[from]) staffAdj[from]={};
           if (!staffAdj[from][to]) staffAdj[from][to]={airlines:[],bestClass:'Y',minKm:km,minMin:min};
           else { staffAdj[from][to].minKm=Math.min(staffAdj[from][to].minKm,km); staffAdj[from][to].minMin=Math.min(staffAdj[from][to].minMin,min); }
           if (!staffAdj[from][to].airlines.includes(carrier.name||code)) staffAdj[from][to].airlines.push(carrier.name||code);
-          // Update bestClass from permitted airlines
           const al=permittedMap[code];
           if (al&&(al.permitted_classes||[]).includes('J')) staffAdj[from][to].bestClass='J';
         }
@@ -552,18 +563,16 @@ function buildIndexes() {
     });
   });
 
-  // Reachable via staff
   permittedAirlines.forEach(al=>{
     (staffRouteIndex[al.iata_code]||[]).forEach(({from,to})=>{reachableStaff.add(from);reachableStaff.add(to);});
   });
-  console.log('Indexes built. Staff airports:', reachableStaff.size, 'Staff airlines:', Object.keys(staffRouteIndex).length);
 }
 
 /* ================================================================
    MAP SETUP
 ================================================================ */
 function initMap() {
-  map = L.map('map',{center:[20,0],zoom:2,zoomControl:true,minZoom:2,maxZoom:12,worldCopyJump:true});
+  map=L.map('map',{center:[20,0],zoom:2,zoomControl:true,minZoom:2,maxZoom:12,worldCopyJump:true});
   L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
     attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
     subdomains:'abcd',maxZoom:20,
@@ -576,35 +585,20 @@ function initMap() {
    AIRPORT LIST
 ================================================================ */
 function buildAirportList() {
-  const query=airportSearch.toLowerCase().trim();
-  const Q=query.toUpperCase();
-  const list=document.getElementById('airport-list');
-  const count=document.getElementById('airport-count');
-
+  const query=airportSearch.toLowerCase().trim(), Q=query.toUpperCase();
+  const list=document.getElementById('airport-list'), count=document.getElementById('airport-count');
   let items;
   if (!query) {
-    items=Object.keys(allAirportRoutes)
-      .map(iata=>[iata,airports[iata]]).filter(([,ap])=>ap)
-      .sort((a,b)=>{
-        const aS=reachableStaff.has(a[0])?0:1, bS=reachableStaff.has(b[0])?0:1;
-        if(aS!==bS) return aS-bS;
-        return a[1].city.localeCompare(b[1].city);
-      });
+    items=Object.keys(allAirportRoutes).map(iata=>[iata,airports[iata]]).filter(([,ap])=>ap)
+      .sort((a,b)=>{const aS=reachableStaff.has(a[0])?0:1,bS=reachableStaff.has(b[0])?0:1;if(aS!==bS)return aS-bS;return a[1].city.localeCompare(b[1].city);});
     count.textContent=`${items.length.toLocaleString()} airports (${reachableStaff.size} on staff network)`;
   } else {
     items=Object.entries(airports)
       .filter(([iata,ap])=>iata.toLowerCase().includes(query)||ap.name.toLowerCase().includes(query)||ap.city.toLowerCase().includes(query))
-      .sort((a,b)=>{
-        const [ia]=[a[0]],[ib]=[b[0]];
-        if(ia===Q&&ib!==Q) return -1; if(ib===Q&&ia!==Q) return 1;
-        const aS=ia.startsWith(Q)?0:1,bS=ib.startsWith(Q)?0:1; if(aS!==bS) return aS-bS;
-        const aR=reachableStaff.has(ia)?0:1,bR=reachableStaff.has(ib)?0:1; if(aR!==bR) return aR-bR;
-        return a[1].city.localeCompare(b[1].city);
-      });
+      .sort((a,b)=>{const[ia]=[a[0]],[ib]=[b[0]];if(ia===Q&&ib!==Q)return -1;if(ib===Q&&ia!==Q)return 1;const aS=ia.startsWith(Q)?0:1,bS=ib.startsWith(Q)?0:1;if(aS!==bS)return aS-bS;const aR=reachableStaff.has(ia)?0:1,bR=reachableStaff.has(ib)?0:1;if(aR!==bR)return aR-bR;return a[1].city.localeCompare(b[1].city);});
     const sC=items.filter(([iata])=>reachableStaff.has(iata)).length;
     count.textContent=`${items.length} results - ${sC} on staff network`;
   }
-
   list.innerHTML='';
   if (!items.length){list.innerHTML='<div style="padding:14px;color:var(--text-muted);font-size:13px">No airports found</div>';return;}
   items.slice(0,200).forEach(([iata,ap])=>{
@@ -621,22 +615,20 @@ function buildAirportList() {
 }
 
 /* ================================================================
-   AIRLINE LIST
+   AIRLINE LIST — alphabetical, staff + other mixed, with clear visual badges
 ================================================================ */
 function buildAirlineList() {
   const query=airlineSearch.toLowerCase().trim();
-  const list=document.getElementById('airline-list');
-  const count=document.getElementById('airline-count');
+  const list=document.getElementById('airline-list'), count=document.getElementById('airline-count');
   list.innerHTML='';
 
-  // Staff airlines (filtered by class)
+  // Staff airlines (possibly filtered by class)
   let staffItems=permittedAirlines
     .filter(a=>{
       if(query&&!a.iata_code.toLowerCase().includes(query)&&!a.airline_name.toLowerCase().includes(query)) return false;
       if(airlineClassFilter==='all') return true;
       return (a.permitted_classes||[]).includes(airlineClassFilter);
-    })
-    .sort((a,b)=>a.airline_name.localeCompare(b.airline_name));
+    });
 
   // Non-staff airlines (only when toggle on)
   let otherItems=[];
@@ -647,59 +639,63 @@ function buildAirlineList() {
         if(query&&!code.toLowerCase().includes(query)&&!al.name.toLowerCase().includes(query)) return false;
         return true;
       })
-      .sort((a,b)=>a[1].name.localeCompare(b[1].name))
-      .slice(0,200);
+      .map(([code,al])=>({code,name:al.name,count:al.count,isStaff:false}));
   }
 
-  const totalShown=staffItems.length+(showAllAirlinesTab?otherItems.length:0);
-  count.textContent=`${staffItems.length} staff airline${staffItems.length!==1?'s':''}${showAllAirlinesTab?` + ${otherItems.length} others`:''}`;
+  // Merge and sort alphabetically
+  const staffMapped=staffItems.map(a=>({code:a.iata_code,name:a.airline_name,al:a,isStaff:true}));
+  const merged=[...staffMapped,...otherItems].sort((a,b)=>a.name.localeCompare(b.name));
 
-  if(!staffItems.length&&!otherItems.length){list.innerHTML='<div style="padding:14px;color:var(--text-muted);font-size:13px">No airlines found</div>';return;}
+  const staffCount=merged.filter(x=>x.isStaff).length;
+  const otherCount=merged.filter(x=>!x.isStaff).length;
+  count.textContent=showAllAirlinesTab
+    ? `${staffCount} staff + ${otherCount} other airlines`
+    : `${staffCount} staff airline${staffCount!==1?'s':''}`;
 
-  if(staffItems.length){
-    const hdr=document.createElement('div');hdr.className='list-section-header';hdr.textContent='Staff Travel Airlines';list.appendChild(hdr);
-    staffItems.forEach(al=>{
-      const isSelected=currentSelection?.type==='airline'&&currentSelection?.id===al.iata_code;
-      const routeCount=(staffRouteIndex[al.iata_code]||[]).length;
-      const classes=(al.permitted_classes||[]).filter(c=>c!=='F'&&c!=='W');
-      const div=document.createElement('div');
-      div.className='result-item'+(isSelected?' selected':'');
-      div.innerHTML=`
-        <div class="result-logo">
-          <img src="${CONFIG.logoBase}${al.iata_code}.svg" alt="${al.iata_code}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
-          <span class="logo-fallback" style="display:none">${al.iata_code}</span>
+  if(!merged.length){list.innerHTML='<div style="padding:14px;color:var(--text-muted);font-size:13px">No airlines found</div>';return;}
+
+  merged.forEach(item=>{
+    const isSelected=currentSelection?.type==='airline'&&currentSelection?.id===item.code ||
+                     currentSelection?.type==='nonstaff-airline'&&currentSelection?.id===item.code;
+    const div=document.createElement('div');
+    div.className='result-item'+(isSelected?' selected':'');
+
+    let classesHtml='';
+    let metaText='';
+    let badgeHtml='';
+
+    if(item.isStaff){
+      const classes=(item.al.permitted_classes||[]).filter(c=>c!=='F'&&c!=='W');
+      classesHtml=classes.map(c=>`<span class="class-badge class-${c}">${classLabel(c)}</span>`).join('');
+      const rc=(staffRouteIndex[item.code]||[]).length;
+      metaText=`${item.al.country||''}${rc?` · ${rc.toLocaleString()} routes`:' · no routes in dataset'}`;
+      badgeHtml=`<span class="staff-badge">&#10003; Staff</span>`;
+    } else {
+      metaText=`${item.count.toLocaleString()} routes in dataset`;
+      badgeHtml=`<span class="other-badge">Other</span>`;
+    }
+
+    div.innerHTML=`
+      <div class="result-logo">
+        <img src="${CONFIG.logoBase}${item.code}.svg" alt="${item.code}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+        <span class="logo-fallback" style="display:none">${item.code}</span>
+      </div>
+      <div class="result-body">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:1px">
+          <div class="result-code">${item.code}</div>
+          ${badgeHtml}
         </div>
-        <div class="result-body">
-          <div class="result-code">${al.iata_code}</div>
-          <div class="result-name">${al.airline_name}</div>
-          <div class="result-meta">${al.country||''}${routeCount?` · ${routeCount.toLocaleString()} routes`:' · no routes in dataset'}</div>
-          <div class="result-classes">${classes.map(c=>`<span class="class-badge class-${c}">${classLabel(c)}</span>`).join('')}</div>
-        </div>`;
-      div.addEventListener('click',()=>selectAirline(al));
-      list.appendChild(div);
-    });
-  }
+        <div class="result-name">${item.name}</div>
+        <div class="result-meta">${metaText}</div>
+        ${classesHtml?`<div class="result-classes">${classesHtml}</div>`:''}
+      </div>`;
 
-  if(showAllAirlinesTab&&otherItems.length){
-    const hdr=document.createElement('div');hdr.className='list-section-header';hdr.textContent='Other Airlines (not on staff network)';list.appendChild(hdr);
-    otherItems.forEach(([code,al])=>{
-      const div=document.createElement('div');
-      div.className='result-item non-staff';
-      div.innerHTML=`
-        <div class="result-logo">
-          <img src="${CONFIG.logoBase}${code}.svg" alt="${code}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
-          <span class="logo-fallback" style="display:none">${code}</span>
-        </div>
-        <div class="result-body">
-          <div class="result-code">${code}</div>
-          <div class="result-name">${al.name}</div>
-          <div class="result-meta">${al.count.toLocaleString()} routes in dataset</div>
-        </div>`;
-      // Clicking a non-staff airline still draws its routes in orange
-      div.addEventListener('click',()=>selectNonStaffAirline(code, al.name));
-      list.appendChild(div);
+    div.addEventListener('click',()=>{
+      if(item.isStaff) selectAirline(item.al);
+      else selectNonStaffAirline(item.code, item.name);
     });
-  }
+    list.appendChild(div);
+  });
 }
 
 function classLabel(c){return {J:'Business',Y:'Economy'}[c]||c;}
@@ -721,21 +717,21 @@ function selectAirport(iata, ap) {
 
   const staffRoutes=staffAirportRoutes[iata]||{};
   const allCarriers=allAirportRoutes[iata]||{};
-  const allDests=new Set();
-  let staffCount=0;
+  const allDests=new Set(); let staffCount=0;
 
   Object.entries(staffRoutes).forEach(([dest,airlineNames])=>{
     const destAp=airports[dest]; if(!destAp) return;
-    // Class filter: check if any eligible code serves this route
     if(airportClassFilter!=='all'){
       const hasEligible=(allCarriers[dest]||[]).some(c=>eligibleCodes.has(c.iata));
       if(!hasEligible) return;
     }
     const info=staffAdj[iata]?.[dest];
-    const color=info?.bestClass==='J'?LEG_COLORS.J:LEG_COLORS.Y;
+    const bestClass=info?.bestClass||'Y';
+    const color=bestClass==='J'?C.business:C.economy;
+    const markerType=bestClass==='J'?'business':'economy';
     drawRouteColored(ap.lat,ap.lon,destAp.lat,destAp.lon,color,0.55,1.6);
     const otherNames=(allCarriers[dest]||[]).filter(c=>!permittedMap[c.iata]).map(c=>c.name||c.iata);
-    addMarker(destAp.lat,destAp.lon,buildPopup(dest,destAp,{staff:airlineNames,other:otherNames}),'staff');
+    addMarker(destAp.lat,destAp.lon,buildPopup(dest,destAp,{staff:airlineNames,other:otherNames}),markerType);
     allDests.add(dest); staffCount++;
   });
 
@@ -745,9 +741,8 @@ function selectAirport(iata, ap) {
       const destAp=airports[dest]; if(!destAp) return;
       const nonStaff=carriers.filter(c=>!permittedMap[c.iata]);
       if(!nonStaff.length) return;
-      drawRouteColored(ap.lat,ap.lon,destAp.lat,destAp.lon,'#e8650a',0.50,1.4);
-      const otherNames=nonStaff.map(c=>c.name||c.iata);
-      addMarker(destAp.lat,destAp.lon,buildPopup(dest,destAp,{staff:[],other:otherNames}),'other');
+      drawRouteColored(ap.lat,ap.lon,destAp.lat,destAp.lon,C.other,0.50,1.4);
+      addMarker(destAp.lat,destAp.lon,buildPopup(dest,destAp,{staff:[],other:nonStaff.map(c=>c.name||c.iata)}),'other');
       allDests.add(dest);
     });
   }
@@ -766,16 +761,16 @@ function selectAirline(al) {
 
   const classOk=airlineClassFilter==='all'||(al.permitted_classes||[]).includes(airlineClassFilter);
   const routes=classOk?(staffRouteIndex[al.iata_code]||[]):[];
-  const allCodes=new Set(); let drawn=0;
   const bestClass=(al.permitted_classes||[]).includes('J')?'J':'Y';
-  const color=bestClass==='J'?LEG_COLORS.J:LEG_COLORS.Y;
+  const color=bestClass==='J'?C.business:C.economy;
+  const markerType=bestClass==='J'?'business':'economy';
+  const allCodes=new Set(); let drawn=0;
 
   routes.forEach(({from,to})=>{
-    const fromAp=airports[from],toAp=airports[to];
-    if(!fromAp||!toAp) return;
+    const fromAp=airports[from],toAp=airports[to]; if(!fromAp||!toAp) return;
     drawRouteColored(fromAp.lat,fromAp.lon,toAp.lat,toAp.lon,color,0.55,1.6);
     if(!allCodes.has(from)){addMarker(fromAp.lat,fromAp.lon,buildPopup(from,fromAp,null),'hub');allCodes.add(from);}
-    if(!allCodes.has(to)){addMarker(toAp.lat,toAp.lon,buildPopup(to,toAp,{staff:[al.airline_name],other:[]}),'staff');allCodes.add(to);}
+    if(!allCodes.has(to)){addMarker(toAp.lat,toAp.lon,buildPopup(to,toAp,{staff:[al.airline_name],other:[]}),markerType);allCodes.add(to);}
     drawn++;
   });
 
@@ -794,15 +789,14 @@ function selectNonStaffAirline(code, name) {
   const allCodes=new Set(); let drawn=0;
 
   routes.forEach(({from,to})=>{
-    const fromAp=airports[from],toAp=airports[to];
-    if(!fromAp||!toAp) return;
-    drawRouteColored(fromAp.lat,fromAp.lon,toAp.lat,toAp.lon,'#e8650a',0.50,1.4);
+    const fromAp=airports[from],toAp=airports[to]; if(!fromAp||!toAp) return;
+    drawRouteColored(fromAp.lat,fromAp.lon,toAp.lat,toAp.lon,C.other,0.50,1.4);
     if(!allCodes.has(from)){addMarker(fromAp.lat,fromAp.lon,`<b>${from}</b> - ${fromAp.name}`,'other');allCodes.add(from);}
     if(!allCodes.has(to)){addMarker(toAp.lat,toAp.lon,`<b>${to}</b> - ${toAp.name}`,'other');allCodes.add(to);}
     drawn++;
   });
 
-  updateInfoPanel({type:'Airline (non-staff)',name:name,code:code,routes:drawn,airports:allCodes.size});
+  updateInfoPanel({type:'Airline (non-staff)',name,code,routes:drawn,airports:allCodes.size});
   if(allCodes.size>0){const pts=Array.from(allCodes).map(iata=>airports[iata]).filter(Boolean).map(a=>[a.lat,a.lon]);if(pts.length>1){try{map.fitBounds(L.latLngBounds(pts),{padding:[50,50],maxZoom:7});}catch(e){}}}
   document.getElementById('clear-btn').classList.add('visible');
 }
@@ -815,14 +809,14 @@ function buildPopup(iata, ap, carriers) {
   if(ap.city) html+=`<br/><span style="color:var(--text-dim);font-size:11px">${ap.city}, ${ap.country}</span>`;
   if(carriers){
     if(carriers.staff&&carriers.staff.length){
-      const unique=[...new Set(carriers.staff)];
-      html+=`<br/><span style="color:#1a6bfa;font-size:11px;font-weight:600">Staff airlines:</span>`;
-      unique.forEach(n=>{html+=`<br/><span style="color:#1a6bfa;font-size:11px">&#9992; ${n}</span>`;});
+      const u=[...new Set(carriers.staff)];
+      html+=`<br/><span style="color:${C.economy};font-size:11px;font-weight:600">Staff airlines:</span>`;
+      u.forEach(n=>{html+=`<br/><span style="color:${C.economy};font-size:11px">&#9992; ${n}</span>`;});
     }
     if(carriers.other&&carriers.other.length){
-      const unique=[...new Set(carriers.other)].slice(0,6);
-      html+=`<br/><span style="color:#e8650a;font-size:11px;font-weight:600">Other airlines:</span>`;
-      unique.forEach(n=>{html+=`<br/><span style="color:#e8650a;font-size:11px">&#9671; ${n}</span>`;});
+      const u=[...new Set(carriers.other)].slice(0,6);
+      html+=`<br/><span style="color:${C.other};font-size:11px;font-weight:600">Other airlines:</span>`;
+      u.forEach(n=>{html+=`<br/><span style="color:${C.other};font-size:11px">&#9671; ${n}</span>`;});
       if(carriers.other.length>6) html+=`<br/><span style="color:var(--text-muted);font-size:10px">+${carriers.other.length-6} more</span>`;
     }
   }
@@ -830,21 +824,20 @@ function buildPopup(iata, ap, carriers) {
 }
 
 /* ================================================================
-   ROUTE FINDER - BFS with configurable max stops + flight time
+   ROUTE FINDER — BFS with configurable max stops + flight time
 ================================================================ */
-function getMaxStops(){return parseInt(document.getElementById('max-stops-select').value)||3;}
+function getMaxLegs(){return parseInt(document.getElementById('max-stops-select').value)||3;}
 
 function findRoutes() {
   if(!routeOrigin||!routeDest) return;
   const origin=routeOrigin.iata, dest=routeDest.iata;
   if(origin===dest) return;
+  // Hide picker, show results area
+  document.getElementById('route-picker-panel').classList.remove('visible');
+  document.getElementById('route-results').classList.add('visible');
 
-  const maxLegs=getMaxStops(); // max number of legs = max stops + 1... but value already = max legs
-
-  // BFS from origin to dest up to maxLegs legs
-  // Each state: { path:[{from,to,airlines,bestClass,minMin,minKm}], visited:Set }
-  const results=[];
-  const seen=new Set();
+  const maxLegs=getMaxLegs();
+  const results=[], seen=new Set();
 
   function bfs(path, visited) {
     const last=path[path.length-1].to;
@@ -853,46 +846,34 @@ function findRoutes() {
     const neighbors=staffAdj[last]||{};
     Object.entries(neighbors).forEach(([next,info])=>{
       if(visited.has(next)) return;
-      // Class filter
       if(routeClassFilter!=='all'){
-        const servingAls=permittedAirlines.filter(al=>info.airlines.some(n=>n===al.airline_name||(staffAdj[last]?.[next]?.airlines||[]).includes(al.airline_name)));
-        const classOk=servingAls.some(al=>(al.permitted_classes||[]).includes(routeClassFilter));
-        if(!classOk) return;
+        const ok=permittedAirlines.some(al=>info.airlines.includes(al.airline_name)&&(al.permitted_classes||[]).includes(routeClassFilter));
+        if(!ok) return;
       }
-      const newPath=[...path,{from:last,to:next,...info}];
-      const key=newPath.map(l=>l.from+'>'+l.to).join('|');
-      if(seen.has(key)) return;
-      seen.add(key);
-      const newVisited=new Set(visited);newVisited.add(next);
-      bfs(newPath,newVisited);
+      const key=path.map(l=>l.from+'>'+l.to).join('|')+'|'+last+'>'+next;
+      if(seen.has(key)) return; seen.add(key);
+      const nv=new Set(visited); nv.add(next);
+      bfs([...path,{from:last,to:next,...info}],nv);
     });
   }
 
-  // Start BFS
-  const startNeighbors=staffAdj[origin]||{};
-  Object.entries(startNeighbors).forEach(([next,info])=>{
+  Object.entries(staffAdj[origin]||{}).forEach(([next,info])=>{
     if(next===origin) return;
     if(routeClassFilter!=='all'){
-      const servingAls=permittedAirlines.filter(al=>info.airlines.includes(al.airline_name));
-      const classOk=servingAls.some(al=>(al.permitted_classes||[]).includes(routeClassFilter));
-      if(!classOk) return;
+      const ok=permittedAirlines.some(al=>info.airlines.includes(al.airline_name)&&(al.permitted_classes||[]).includes(routeClassFilter));
+      if(!ok) return;
     }
-    const path=[{from:origin,to:next,...info}];
     const key=`${origin}>${next}`;
-    seen.add(key);
-    bfs(path,new Set([origin,next]));
+    if(seen.has(key)) return; seen.add(key);
+    bfs([{from:origin,to:next,...info}],new Set([origin,next]));
   });
 
-  // Sort by total flight minutes (ascending), then by stops
   results.sort((a,b)=>{
-    const aTot=a.reduce((s,l)=>s+(l.minMin||0),0);
-    const bTot=b.reduce((s,l)=>s+(l.minMin||0),0);
-    if(aTot!==bTot) return aTot-bTot;
-    return a.length-b.length;
+    const aT=a.reduce((s,l)=>s+(l.minMin||0),0), bT=b.reduce((s,l)=>s+(l.minMin||0),0);
+    if(aT!==bT) return aT-bT; return a.length-b.length;
   });
 
-  const capped=results.slice(0,40);
-  renderRouteResults(capped,origin,dest);
+  renderRouteResults(results.slice(0,40), origin, dest);
 }
 
 function formatDuration(totalMin){
@@ -902,10 +883,9 @@ function formatDuration(totalMin){
 }
 
 function renderRouteResults(routes, origin, dest) {
-  const container=document.getElementById('route-results');
   const countEl=document.getElementById('route-results-count');
   const listEl=document.getElementById('route-results-list');
-  container.classList.add('visible'); listEl.innerHTML='';
+  listEl.innerHTML='';
 
   if(!routes.length){
     countEl.textContent='No routes found';
@@ -916,11 +896,8 @@ function renderRouteResults(routes, origin, dest) {
 
   routes.forEach((legs,idx)=>{
     const stops=legs.length-1;
-    const badgeClasses=['badge-direct','badge-1stop','badge-2stop','badge-3stop','badge-4stop'];
-    const badgeTexts=['Direct','1 Stop','2 Stops','3 Stops','4 Stops'];
-    const badgeCls=badgeClasses[stops]||'badge-4stop';
-    const badgeTxt=badgeTexts[stops]||(stops+' Stops');
-
+    const badgeCls=['badge-direct','badge-1stop','badge-2stop','badge-3stop'][stops]||'badge-3stop';
+    const badgeTxt=['Direct','1 Stop','2 Stops','3 Stops'][stops]||(stops+' Stops');
     const totalMin=legs.reduce((s,l)=>s+(l.minMin||0),0);
     const durText=formatDuration(totalMin);
 
@@ -930,11 +907,12 @@ function renderRouteResults(routes, origin, dest) {
     const legHTML=legs.map(leg=>{
       const alCode=permittedAirlines.find(a=>leg.airlines.includes(a.airline_name))?.iata_code;
       const logoTag=alCode?`<img class="route-leg-logo" src="${CONFIG.logoBase}${alCode}.svg" onerror="this.style.display='none'">`:'' ;
-      const legDur=leg.minMin?`<span class="route-leg-dur">${formatDuration(leg.minMin)}</span>`:'';
-      const classCol=leg.bestClass==='J'?'#1e40af':'#065f46';
-      const classBg=leg.bestClass==='J'?'#dbeafe':'#d1fae5';
-      const classTxt=leg.bestClass==='J'?'Business':'Economy';
-      const classBadge=`<span class="route-leg-class" style="background:${classBg};color:${classCol}">${classTxt}</span>`;
+      const legDur=leg.minMin?`<span class="route-leg-dur">~${formatDuration(leg.minMin)}</span>`:'';
+      const cls=leg.bestClass||'Y';
+      const clsColor=cls==='J'?C.business:C.economy;
+      const clsBg=cls==='J'?'rgba(124,58,237,0.1)':'rgba(14,165,233,0.1)';
+      const clsTxt=cls==='J'?'Business':'Economy';
+      const classBadge=`<span class="route-leg-class" style="background:${clsBg};color:${clsColor}">${clsTxt}</span>`;
       return `<div class="route-card-leg">
         <div class="route-leg-left">${logoTag}<span class="route-leg-name">${leg.airlines.slice(0,2).join('/')}</span></div>
         <span class="route-leg-route">${leg.from}</span>
@@ -956,13 +934,11 @@ function renderRouteResults(routes, origin, dest) {
 
     card.addEventListener('click',()=>{
       document.querySelectorAll('.route-result-card').forEach(c=>c.classList.remove('selected'));
-      card.classList.add('selected'); selectedRouteIdx=idx;
-      drawRouteOnMap(legs);
+      card.classList.add('selected'); drawRouteOnMap(legs);
     });
     listEl.appendChild(card);
   });
 
-  // Auto-draw first
   if(routes.length>0){listEl.querySelector('.route-result-card').classList.add('selected');drawRouteOnMap(routes[0]);}
 }
 
@@ -972,9 +948,9 @@ function drawRouteOnMap(legs) {
   legs.forEach(leg=>{allIata.add(leg.from);allIata.add(leg.to);});
 
   legs.forEach((leg,i)=>{
-    const fromAp=airports[leg.from],toAp=airports[leg.to];
-    if(!fromAp||!toAp) return;
-    const color=leg.bestClass==='J'?'#0ea5e9':'#7c3aed';
+    const fromAp=airports[leg.from],toAp=airports[leg.to]; if(!fromAp||!toAp) return;
+    const cls=leg.bestClass||'Y';
+    const color=cls==='J'?C.business:C.economy;
     const pts=gcPoints(fromAp.lat,fromAp.lon,toAp.lat,toAp.lon,40);
     splitAtAntimeridian(pts).forEach(seg=>{
       L.polyline(seg,{color,weight:2.8,opacity:0.80,dashArray:'7 4',smoothFactor:1}).addTo(routeLayerGroup);
@@ -983,13 +959,17 @@ function drawRouteOnMap(legs) {
 
   legs.forEach((leg,i)=>{
     const fromAp=airports[leg.from],toAp=airports[leg.to];
-    if(fromAp&&i===0) addMarker(fromAp.lat,fromAp.lon,`<b>${leg.from}</b> - ${fromAp.name}<br/><span style="color:#7c3aed;font-size:11px">Origin</span>`,'route');
+    const cls=leg.bestClass||'Y';
+    const markerType=cls==='J'?'business':'economy';
+    if(fromAp&&i===0) addMarker(fromAp.lat,fromAp.lon,`<b>${leg.from}</b> - ${fromAp.name}<br/><span style="color:${C.business};font-size:11px;font-weight:600">Origin</span>`,'hub');
     if(toAp){
       const isLast=i===legs.length-1;
       const label=isLast?'Destination':'Connection';
-      html=`<b>${leg.to}</b> - ${toAp.name}<br/><span style="color:#7c3aed;font-size:11px">${label}</span><br/><span style="color:#1a6bfa;font-size:11px">&#9992; ${leg.airlines.join(', ')}</span>`;
-      if(leg.minMin) html+=`<br/><span style="color:var(--text-dim);font-size:10px">Flight: ~${formatDuration(leg.minMin)}</span>`;
-      addMarker(toAp.lat,toAp.lon,html,isLast?'route':'waypoint');
+      const color=isLast?C.business:'#6d28d9';
+      let popHtml=`<b>${leg.to}</b> - ${toAp.name}<br/><span style="color:${color};font-size:11px;font-weight:600">${label}</span>`;
+      popHtml+=`<br/><span style="color:${C.economy};font-size:11px">&#9992; ${leg.airlines.join(', ')}</span>`;
+      if(leg.minMin) popHtml+=`<br/><span style="color:var(--text-muted);font-size:10px">~${formatDuration(leg.minMin)} flight time</span>`;
+      addMarker(toAp.lat,toAp.lon,popHtml,isLast?'route':'waypoint');
     }
   });
 
@@ -1002,11 +982,11 @@ function drawRouteOnMap(legs) {
    MAP DRAWING
 ================================================================ */
 function makeMarkerIcon(type){
-  const cls={hub:'ap-hub',staff:'ap-staff',other:'ap-other',route:'ap-route',waypoint:'ap-waypoint'}[type]||'ap-staff';
+  const cls={hub:'ap-hub',economy:'ap-economy',business:'ap-business',other:'ap-other',route:'ap-route',waypoint:'ap-waypoint'}[type]||'ap-economy';
   return L.divIcon({className:'',html:`<div style="position:relative;width:18px;height:18px"><div class="ap-marker ${cls}"></div></div>`,iconSize:[18,18],iconAnchor:[9,9]});
 }
 
-function addMarker(lat,lon,popupHtml,type='staff'){
+function addMarker(lat,lon,popupHtml,type='economy'){
   L.marker([lat,lon],{icon:makeMarkerIcon(type),zIndexOffset:type==='hub'||type==='route'?1000:0})
    .bindPopup(popupHtml).addTo(markerLayerGroup);
 }
@@ -1052,13 +1032,16 @@ function fitToPoints(oLat,oLon,iataSet){
 }
 
 /* ================================================================
-   ROUTE PICKER
+   ROUTE PICKER — integrated search+list (same pattern as airports)
 ================================================================ */
 function activateRoutePicker(target){
-  routePickerTarget=target; routePickerSearch='';
+  routePickerTarget=target;
+  routePickerSearch='';
   document.getElementById('route-picker-search').value='';
-  document.getElementById('route-picker-header').textContent=target==='origin'?'Select departure airport':'Select arrival airport';
-  document.getElementById('route-picker-list').classList.add('visible');
+  document.getElementById('route-picker-clear').classList.remove('visible');
+  document.getElementById('route-picker-header').textContent=
+    target==='origin'?'Selecting departure airport':'Selecting arrival airport';
+  document.getElementById('route-picker-panel').classList.add('visible');
   document.getElementById('route-results').classList.remove('visible');
   document.getElementById('route-origin-box').classList.toggle('active-input',target==='origin');
   document.getElementById('route-dest-box').classList.toggle('active-input',target==='dest');
@@ -1067,19 +1050,32 @@ function activateRoutePicker(target){
 }
 
 function buildRoutePickerList(query){
-  const q=query.toLowerCase().trim(),Q=q.toUpperCase();
+  const q=query.toLowerCase().trim(), Q=q.toUpperCase();
   const list=document.getElementById('route-picker-airports');
   let items;
-  if(!q){items=Array.from(reachableStaff).map(iata=>[iata,airports[iata]]).filter(([,ap])=>ap).sort((a,b)=>a[1].city.localeCompare(b[1].city));}
-  else{items=Object.entries(airports).filter(([iata,ap])=>reachableStaff.has(iata)&&(iata.toLowerCase().includes(q)||ap.name.toLowerCase().includes(q)||ap.city.toLowerCase().includes(q))).sort((a,b)=>{const[ia]=[a[0]],[ib]=[b[0]];if(ia===Q&&ib!==Q)return -1;if(ib===Q&&ia!==Q)return 1;return a[1].city.localeCompare(b[1].city);});}
+  if(!q){
+    items=Array.from(reachableStaff).map(iata=>[iata,airports[iata]]).filter(([,ap])=>ap)
+      .sort((a,b)=>a[1].city.localeCompare(b[1].city));
+  } else {
+    items=Object.entries(airports)
+      .filter(([iata,ap])=>reachableStaff.has(iata)&&(iata.toLowerCase().includes(q)||ap.name.toLowerCase().includes(q)||ap.city.toLowerCase().includes(q)))
+      .sort((a,b)=>{const[ia]=[a[0]],[ib]=[b[0]];if(ia===Q&&ib!==Q)return -1;if(ib===Q&&ia!==Q)return 1;return a[1].city.localeCompare(b[1].city);});
+  }
   list.innerHTML='';
   if(!items.length){list.innerHTML='<div style="padding:14px;color:var(--text-muted);font-size:12px">No staff-network airports found</div>';return;}
   items.slice(0,100).forEach(([iata,ap])=>{
-    const div=document.createElement('div');div.className='result-item';
+    const div=document.createElement('div'); div.className='result-item';
     div.innerHTML=`<div class="result-body"><div class="result-code">${iata}</div><div class="result-name">${ap.name}</div><div class="result-meta">${ap.city}${ap.city&&ap.country?' · ':''}${ap.country}</div></div>`;
     div.addEventListener('click',()=>setRouteAirport(routePickerTarget,iata,ap));
     list.appendChild(div);
   });
+}
+
+function clearRoutePickerSearch(){
+  document.getElementById('route-picker-search').value='';
+  document.getElementById('route-picker-clear').classList.remove('visible');
+  routePickerSearch='';
+  buildRoutePickerList('');
 }
 
 function setRouteAirport(target,iata,ap){
@@ -1090,8 +1086,8 @@ function setRouteAirport(target,iata,ap){
   if(target==='origin') routeOrigin={iata,ap}; else routeDest={iata,ap};
   vEl.textContent=`${iata} - ${ap.name}`; vEl.classList.remove('placeholder');
   sEl.textContent=`${ap.city}, ${ap.country}`; sEl.style.display='block';
-  cEl.style.display='flex'; bEl.classList.add('has-value');
-  document.getElementById('route-picker-list').classList.remove('visible');
+  cEl.classList.add('visible'); bEl.classList.add('has-value');
+  document.getElementById('route-picker-panel').classList.remove('visible');
   document.getElementById('route-origin-box').classList.remove('active-input');
   document.getElementById('route-dest-box').classList.remove('active-input');
   routePickerTarget=null;
@@ -1101,13 +1097,15 @@ function setRouteAirport(target,iata,ap){
 function clearRouteEnd(e,target){
   e.stopPropagation();
   if(target==='origin') routeOrigin=null; else routeDest=null;
-  document.getElementById(`route-${target}-val`).textContent=target==='origin'?'Select departure airport':'Select arrival airport';
-  document.getElementById(`route-${target}-val`).classList.add('placeholder');
+  const vEl=document.getElementById(`route-${target}-val`);
+  vEl.textContent=target==='origin'?'Select departure airport':'Select arrival airport';
+  vEl.classList.add('placeholder');
   document.getElementById(`route-${target}-sub`).style.display='none';
-  document.getElementById(`route-${target}-clear`).style.display='none';
+  document.getElementById(`route-${target}-clear`).classList.remove('visible');
   document.getElementById(`route-${target}-box`).classList.remove('has-value');
   document.getElementById('route-search-btn').disabled=!(routeOrigin&&routeDest);
   document.getElementById('route-results').classList.remove('visible');
+  document.getElementById('route-picker-panel').classList.remove('visible');
   clearLayers();
 }
 
@@ -1119,10 +1117,25 @@ function swapRouteAirports(){
     const sEl=document.getElementById(`route-${t}-sub`);
     const cEl=document.getElementById(`route-${t}-clear`);
     const bEl=document.getElementById(`route-${t}-box`);
-    if(obj){vEl.textContent=`${obj.iata} - ${obj.ap.name}`;vEl.classList.remove('placeholder');sEl.textContent=`${obj.ap.city}, ${obj.ap.country}`;sEl.style.display='block';cEl.style.display='flex';bEl.classList.add('has-value');}
-    else{vEl.textContent=t==='origin'?'Select departure airport':'Select arrival airport';vEl.classList.add('placeholder');sEl.style.display='none';cEl.style.display='none';bEl.classList.remove('has-value');}
+    if(obj){vEl.textContent=`${obj.iata} - ${obj.ap.name}`;vEl.classList.remove('placeholder');sEl.textContent=`${obj.ap.city}, ${obj.ap.country}`;sEl.style.display='block';cEl.classList.add('visible');bEl.classList.add('has-value');}
+    else{vEl.textContent=t==='origin'?'Select departure airport':'Select arrival airport';vEl.classList.add('placeholder');sEl.style.display='none';cEl.classList.remove('visible');bEl.classList.remove('has-value');}
   });
   document.getElementById('route-search-btn').disabled=!(routeOrigin&&routeDest);
+}
+
+/* ================================================================
+   SEARCH CLEAR
+================================================================ */
+function clearSearch(which){
+  if(which==='airport'){
+    document.getElementById('airport-search').value='';
+    document.getElementById('airport-search-clear').classList.remove('visible');
+    airportSearch=''; buildAirportList();
+  } else {
+    document.getElementById('airline-search').value='';
+    document.getElementById('airline-search-clear').classList.remove('visible');
+    airlineSearch=''; buildAirlineList();
+  }
 }
 
 /* ================================================================
@@ -1168,12 +1181,21 @@ document.querySelectorAll('.tab').forEach(btn=>{
     document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
-    if(btn.dataset.tab!=='routes') document.getElementById('route-picker-list').classList.remove('visible');
+    if(btn.dataset.tab!=='routes') document.getElementById('route-picker-panel').classList.remove('visible');
   });
 });
 
-document.getElementById('airport-search').addEventListener('input',e=>{airportSearch=e.target.value;buildAirportList();});
-document.getElementById('airline-search').addEventListener('input',e=>{airlineSearch=e.target.value;buildAirlineList();});
+document.getElementById('airport-search').addEventListener('input',e=>{
+  airportSearch=e.target.value;
+  document.getElementById('airport-search-clear').classList.toggle('visible',!!e.target.value);
+  buildAirportList();
+});
+
+document.getElementById('airline-search').addEventListener('input',e=>{
+  airlineSearch=e.target.value;
+  document.getElementById('airline-search-clear').classList.toggle('visible',!!e.target.value);
+  buildAirlineList();
+});
 
 document.getElementById('all-airlines-toggle').addEventListener('change',e=>{
   showAllAirlines=e.target.checked;
@@ -1207,11 +1229,13 @@ document.querySelectorAll('#route-class-pills .pill').forEach(pill=>{
 });
 
 document.getElementById('route-picker-search').addEventListener('input',e=>{
-  routePickerSearch=e.target.value; buildRoutePickerList(routePickerSearch);
+  routePickerSearch=e.target.value;
+  document.getElementById('route-picker-clear').classList.toggle('visible',!!e.target.value);
+  buildRoutePickerList(routePickerSearch);
 });
 
 /* ================================================================
-   LEAFLET STYLE OVERRIDES
+   LEAFLET OVERRIDES
 ================================================================ */
 const _s=document.createElement('style');
 _s.textContent=`
@@ -1229,5 +1253,6 @@ document.head.appendChild(_s);
 
 init();
 </script>
+
 </body>
 </html>
