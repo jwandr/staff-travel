@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
@@ -30,202 +29,199 @@
     html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:14px}
     #app{display:flex;height:100vh;width:100vw}
 
-```
-/* ── Panel ──
-   max-width locks the column to exactly --panel-w regardless of content.
-   The flex column chain must have explicit bounds at every level for
-   overflow/scroll to work: panel → panel-body (min-height:0) →
-   tab-content (min-height:0) → result-list (overflow-y:auto, flex:1).
-*/
-#panel{width:var(--panel-w);max-width:var(--panel-w);flex-shrink:0;flex-grow:0;flex-basis:var(--panel-w);height:100%;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:1000;overflow:hidden;box-shadow:3px 0 16px rgba(0,0,0,0.06)}
-#panel-header{padding:14px 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
-.logo-row{display:flex;align-items:center;gap:10px}
-/* Custom logo image — falls back to SVG mark if image missing */
-.logo-img{height:38px;width:auto;max-width:180px;object-fit:contain;display:block}
-.logo-img-fallback{display:none;width:36px;height:36px;background:var(--blue);border-radius:9px;align-items:center;justify-content:center;flex-shrink:0}
-.logo-img-fallback svg{width:22px;height:22px;fill:white}
-.logo-text{display:flex;flex-direction:column;line-height:1.1;min-width:0}
-.logo-title{font-size:17px;font-weight:800;color:var(--text);letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.logo-sub{font-size:10px;font-weight:500;color:var(--text-muted);font-family:var(--font-mono);letter-spacing:0.05em;margin-top:1px}
+    /* ── Panel ──
+       max-width locks the column to exactly --panel-w regardless of content.
+       The flex column chain must have explicit bounds at every level for
+       overflow/scroll to work: panel → panel-body (min-height:0) →
+       tab-content (min-height:0) → result-list (overflow-y:auto, flex:1).
+    */
+    #panel{width:var(--panel-w);max-width:var(--panel-w);flex-shrink:0;flex-grow:0;flex-basis:var(--panel-w);height:100%;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:1000;overflow:hidden;box-shadow:3px 0 16px rgba(0,0,0,0.06)}
+    #panel-header{padding:14px 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+    .logo-row{display:flex;align-items:center;gap:10px}
+    /* Custom logo image — falls back to SVG mark if image missing */
+    .logo-img{height:38px;width:auto;max-width:180px;object-fit:contain;display:block}
+    .logo-img-fallback{display:none;width:36px;height:36px;background:var(--blue);border-radius:9px;align-items:center;justify-content:center;flex-shrink:0}
+    .logo-img-fallback svg{width:22px;height:22px;fill:white}
+    .logo-text{display:flex;flex-direction:column;line-height:1.1;min-width:0}
+    .logo-title{font-size:17px;font-weight:800;color:var(--text);letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .logo-sub{font-size:10px;font-weight:500;color:var(--text-muted);font-family:var(--font-mono);letter-spacing:0.05em;margin-top:1px}
 
-/* ── Tabs ── */
-#tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg);padding:0 12px;gap:2px}
-.tab{flex:1;padding:10px 4px;font-size:12px;font-weight:600;font-family:var(--font-ui);color:var(--text-muted);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:color 0.15s,border-color 0.15s;white-space:nowrap}
-.tab:hover{color:var(--text-dim)}
-.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+    /* ── Tabs ── */
+    #tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg);padding:0 12px;gap:2px}
+    .tab{flex:1;padding:10px 4px;font-size:12px;font-weight:600;font-family:var(--font-ui);color:var(--text-muted);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:color 0.15s,border-color 0.15s;white-space:nowrap}
+    .tab:hover{color:var(--text-dim)}
+    .tab.active{color:var(--blue);border-bottom-color:var(--blue)}
 
-/* ── Panel body ──
-   min-height:0 is the critical fix: without it, a flex child ignores
-   overflow and expands to fit its content, killing scroll.
-*/
-#panel-body{flex:1;min-height:0;min-width:0;flex-shrink:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
-.tab-content{display:none;flex-direction:column;flex:1;min-height:0;min-width:0;overflow-x:hidden;overflow-y:hidden}
-.tab-content.active{display:flex}
+    /* ── Panel body ──
+       min-height:0 is the critical fix: without it, a flex child ignores
+       overflow and expands to fit its content, killing scroll.
+    */
+    #panel-body{flex:1;min-height:0;min-width:0;flex-shrink:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+    .tab-content{display:none;flex-direction:column;flex:1;min-height:0;min-width:0;overflow-x:hidden;overflow-y:hidden}
+    .tab-content.active{display:flex}
 
-/* ── Search ── */
-.search-wrap{padding:14px 14px 8px;flex-shrink:0;min-width:0}
-.search-label{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;display:block}
-.search-input-wrap{position:relative;min-width:0;overflow:hidden}
-.search-input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:9px 60px 9px 11px;font-size:14px;font-family:var(--font-ui);color:var(--text);outline:none;transition:border-color 0.15s,box-shadow 0.15s}
-.search-input::placeholder{color:var(--text-muted)}
-.search-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
-.search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--border-mid);border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;color:var(--text-dim);display:none;align-items:center;justify-content:center;line-height:1}
-.search-clear.visible{display:flex}
-.search-clear:hover{background:var(--border);color:var(--text)}
+    /* ── Search ── */
+    .search-wrap{padding:14px 14px 8px;flex-shrink:0;min-width:0}
+    .search-label{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;display:block}
+    .search-input-wrap{position:relative;min-width:0;overflow:hidden}
+    .search-input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:9px 60px 9px 11px;font-size:14px;font-family:var(--font-ui);color:var(--text);outline:none;transition:border-color 0.15s,box-shadow 0.15s}
+    .search-input::placeholder{color:var(--text-muted)}
+    .search-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
+    .search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--border-mid);border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;color:var(--text-dim);display:none;align-items:center;justify-content:center;line-height:1}
+    .search-clear.visible{display:flex}
+    .search-clear:hover{background:var(--border);color:var(--text)}
 
-/* ── Controls ── */
-.controls-wrap{padding:4px 14px 10px;flex-shrink:0;min-width:0;display:flex;flex-direction:column;gap:8px}
-.toggle-row{display:flex;align-items:center;justify-content:space-between}
-.toggle-label{font-size:12px;font-weight:600;color:var(--text-dim);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.toggle-switch{position:relative;width:38px;height:22px}
-.toggle-switch input{opacity:0;width:0;height:0}
-.toggle-slider{position:absolute;inset:0;background:var(--border-mid);border-radius:22px;cursor:pointer;transition:background 0.2s}
-.toggle-slider::before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;background:white;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
-.toggle-switch input:checked+.toggle-slider{background:var(--blue)}
-.toggle-switch input:checked+.toggle-slider::before{transform:translateX(16px)}
-.filter-row{display:flex;flex-direction:column;gap:4px}
-.filter-row-label{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted)}
-.pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
-.pill{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--border-mid);color:var(--text-dim);background:var(--surface);cursor:pointer;transition:all 0.15s}
-.pill:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-soft)}
-.pill.active{background:var(--blue);border-color:var(--blue);color:#fff}
+    /* ── Controls ── */
+    .controls-wrap{padding:4px 14px 10px;flex-shrink:0;min-width:0;display:flex;flex-direction:column;gap:8px}
+    .toggle-row{display:flex;align-items:center;justify-content:space-between}
+    .toggle-label{font-size:12px;font-weight:600;color:var(--text-dim);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .toggle-switch{position:relative;width:38px;height:22px}
+    .toggle-switch input{opacity:0;width:0;height:0}
+    .toggle-slider{position:absolute;inset:0;background:var(--border-mid);border-radius:22px;cursor:pointer;transition:background 0.2s}
+    .toggle-slider::before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;background:white;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
+    .toggle-switch input:checked+.toggle-slider{background:var(--blue)}
+    .toggle-switch input:checked+.toggle-slider::before{transform:translateX(16px)}
+    .filter-row{display:flex;flex-direction:column;gap:4px}
+    .filter-row-label{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted)}
+    .pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
+    .pill{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--border-mid);color:var(--text-dim);background:var(--surface);cursor:pointer;transition:all 0.15s}
+    .pill:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-soft)}
+    .pill.active{background:var(--blue);border-color:var(--blue);color:#fff}
 
-/* ── Result list — the actual scroll container ── */
-.result-list{flex:1;min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden}
-.result-list::-webkit-scrollbar{width:3px}
-.result-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-.result-count{padding:4px 14px;font-size:11px;font-family:var(--font-mono);color:var(--text-muted);flex-shrink:0}
-.result-item{padding:10px 14px;cursor:pointer;border-left:3px solid transparent;transition:background 0.12s,border-color 0.12s;display:flex;align-items:center;gap:10px;min-width:0;max-width:100%;overflow:hidden}
-.result-item:hover{background:var(--surface2);border-left-color:var(--blue-mid)}
-.result-item.selected{background:var(--blue-soft);border-left-color:var(--blue)}
-.result-logo{width:44px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg);border:1px solid var(--border);border-radius:5px;overflow:hidden;padding:2px}
-.result-logo img{max-width:40px;max-height:24px;object-fit:contain;display:block}
-.result-logo .logo-fallback{font-size:9px;font-weight:700;font-family:var(--font-mono);color:var(--text-muted)}
-.result-body{flex:1;min-width:0;overflow:hidden}
-.result-code{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--blue)}
-.result-name{font-size:13px;font-weight:600;color:var(--text);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.result-meta{font-size:11px;font-family:var(--font-mono);color:var(--text-muted);margin-top:1px}
-.result-classes{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
-/* Staff badge shown on each airline row in the mixed list */
-.staff-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;text-transform:uppercase;letter-spacing:0.04em}
-.other-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;text-transform:uppercase;letter-spacing:0.04em}
-.class-badge{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;font-family:var(--font-ui);text-transform:uppercase}
-.class-J{background:rgba(124,58,237,0.1);color:#5b21b6;border:1px solid rgba(124,58,237,0.3)}
-.class-Y{background:rgba(14,165,233,0.1);color:#0369a1;border:1px solid rgba(14,165,233,0.3)}
+    /* ── Result list — the actual scroll container ── */
+    .result-list{flex:1;min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden}
+    .result-list::-webkit-scrollbar{width:3px}
+    .result-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+    .result-count{padding:4px 14px;font-size:11px;font-family:var(--font-mono);color:var(--text-muted);flex-shrink:0}
+    .result-item{padding:10px 14px;cursor:pointer;border-left:3px solid transparent;transition:background 0.12s,border-color 0.12s;display:flex;align-items:center;gap:10px;min-width:0;max-width:100%;overflow:hidden}
+    .result-item:hover{background:var(--surface2);border-left-color:var(--blue-mid)}
+    .result-item.selected{background:var(--blue-soft);border-left-color:var(--blue)}
+    .result-logo{width:44px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg);border:1px solid var(--border);border-radius:5px;overflow:hidden;padding:2px}
+    .result-logo img{max-width:40px;max-height:24px;object-fit:contain;display:block}
+    .result-logo .logo-fallback{font-size:9px;font-weight:700;font-family:var(--font-mono);color:var(--text-muted)}
+    .result-body{flex:1;min-width:0;overflow:hidden}
+    .result-code{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--blue)}
+    .result-name{font-size:13px;font-weight:600;color:var(--text);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+    .result-meta{font-size:11px;font-family:var(--font-mono);color:var(--text-muted);margin-top:1px}
+    .result-classes{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+    /* Staff badge shown on each airline row in the mixed list */
+    .staff-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;text-transform:uppercase;letter-spacing:0.04em}
+    .other-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;text-transform:uppercase;letter-spacing:0.04em}
+    .class-badge{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;font-family:var(--font-ui);text-transform:uppercase}
+    .class-J{background:rgba(124,58,237,0.1);color:#5b21b6;border:1px solid rgba(124,58,237,0.3)}
+    .class-Y{background:rgba(14,165,233,0.1);color:#0369a1;border:1px solid rgba(14,165,233,0.3)}
 
-/* ── Route finder ── */
-.route-finder-wrap{padding:14px;display:flex;flex-direction:column;gap:8px;flex-shrink:0}
-/* Route airport selector — now inline search + list like other tabs */
-.route-airport-box{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:10px 36px 10px 12px;cursor:pointer;transition:border-color 0.15s;position:relative}
-.route-airport-box:hover{border-color:var(--blue)}
-.route-airport-box.active-input{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
-.route-airport-box.has-value{background:white;border-color:var(--border-mid)}
-.route-box-label{font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px}
-.route-box-value{font-size:14px;font-weight:700;color:var(--text)}
-.route-box-value.placeholder{color:var(--text-muted);font-weight:400}
-.route-box-sub{font-size:11px;font-family:var(--font-mono);color:var(--text-dim);margin-top:1px}
-.route-box-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--border);border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;color:var(--text-dim);display:none;align-items:center;justify-content:center}
-.route-box-clear.visible{display:flex}
-.route-box-clear:hover{background:var(--border-mid)}
-.route-swap-btn{display:flex;align-items:center;justify-content:center;background:none;border:1.5px solid var(--border-mid);border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:14px;align-self:center;transition:all 0.15s;color:var(--text-dim)}
-.route-swap-btn:hover{border-color:var(--blue);color:var(--blue)}
-.route-options{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.route-max-toggle{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text-dim)}
-.route-search-btn{background:var(--blue);color:white;border:none;border-radius:var(--r-sm);padding:11px;font-size:14px;font-weight:700;font-family:var(--font-ui);cursor:pointer;transition:background 0.15s;flex:1}
-.route-search-btn:hover{background:var(--blue-dark)}
-.route-search-btn:disabled{background:var(--border-mid);color:var(--text-muted);cursor:not-allowed}
+    /* ── Route finder ── */
+    .route-finder-wrap{padding:14px;display:flex;flex-direction:column;gap:8px;flex-shrink:0}
+    /* Route airport selector — now inline search + list like other tabs */
+    .route-airport-box{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:10px 36px 10px 12px;cursor:pointer;transition:border-color 0.15s;position:relative}
+    .route-airport-box:hover{border-color:var(--blue)}
+    .route-airport-box.active-input{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
+    .route-airport-box.has-value{background:white;border-color:var(--border-mid)}
+    .route-box-label{font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px}
+    .route-box-value{font-size:14px;font-weight:700;color:var(--text)}
+    .route-box-value.placeholder{color:var(--text-muted);font-weight:400}
+    .route-box-sub{font-size:11px;font-family:var(--font-mono);color:var(--text-dim);margin-top:1px}
+    .route-box-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--border);border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;color:var(--text-dim);display:none;align-items:center;justify-content:center}
+    .route-box-clear.visible{display:flex}
+    .route-box-clear:hover{background:var(--border-mid)}
+    .route-swap-btn{display:flex;align-items:center;justify-content:center;background:none;border:1.5px solid var(--border-mid);border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:14px;align-self:center;transition:all 0.15s;color:var(--text-dim)}
+    .route-swap-btn:hover{border-color:var(--blue);color:var(--blue)}
+    .route-options{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .route-max-toggle{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text-dim)}
+    .route-search-btn{background:var(--blue);color:white;border:none;border-radius:var(--r-sm);padding:11px;font-size:14px;font-weight:700;font-family:var(--font-ui);cursor:pointer;transition:background 0.15s;flex:1}
+    .route-search-btn:hover{background:var(--blue-dark)}
+    .route-search-btn:disabled{background:var(--border-mid);color:var(--text-muted);cursor:not-allowed}
 
-/* Route airport picker — full panel overlay slides over everything */
-.route-picker-panel{display:none;flex-direction:column;position:absolute;top:0;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-right:1px solid var(--border)}
-.route-picker-panel.visible{display:flex}
-.route-picker-topbar{display:flex;align-items:center;gap:10px;padding:14px 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
-.route-picker-back{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:18px;padding:2px 4px;border-radius:4px;line-height:1;flex-shrink:0}
-.route-picker-back:hover{color:var(--blue);background:var(--blue-soft)}
-.route-picker-title{font-size:13px;font-weight:700;color:var(--text)}
-.route-picker-header{padding:4px 14px 2px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);font-family:var(--font-mono);flex-shrink:0}
+    /* Route airport picker — full panel overlay slides over everything */
+    .route-picker-panel{display:none;flex-direction:column;position:absolute;top:0;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-right:1px solid var(--border)}
+    .route-picker-panel.visible{display:flex}
+    .route-picker-topbar{display:flex;align-items:center;gap:10px;padding:14px 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
+    .route-picker-back{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:18px;padding:2px 4px;border-radius:4px;line-height:1;flex-shrink:0}
+    .route-picker-back:hover{color:var(--blue);background:var(--blue-soft)}
+    .route-picker-title{font-size:13px;font-weight:700;color:var(--text)}
+    .route-picker-header{padding:4px 14px 2px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);font-family:var(--font-mono);flex-shrink:0}
 
-.route-results{flex:1;min-height:0;overflow-y:auto;display:none;padding-bottom:8px}
-.route-results.visible{display:block}
+    .route-results{flex:1;min-height:0;overflow-y:auto;display:none;padding-bottom:8px}
+    .route-results.visible{display:block}
 
-.route-result-card{margin:8px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s}
-.route-result-card:hover{border-color:var(--col-business);box-shadow:0 2px 10px var(--col-business-soft)}
-.route-result-card.selected{border-color:var(--col-business);background:var(--col-business-soft)}
-.route-card-header{padding:9px 12px 7px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
-.route-card-title{font-size:12px;font-weight:700;color:var(--text)}
-.route-card-meta{display:flex;align-items:center;gap:6px}
-.route-card-duration{font-size:11px;font-family:var(--font-mono);color:var(--text-dim);white-space:nowrap}
-.route-card-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap}
-.badge-direct{background:#d1fae5;color:#065f46;border:1px solid #6ee7b7}
-.badge-1stop{background:rgba(14,165,233,0.12);color:#0369a1;border:1px solid rgba(14,165,233,0.35)}
-.badge-2stop{background:rgba(124,58,237,0.1);color:#5b21b6;border:1px solid rgba(124,58,237,0.3)}
-.badge-3stop{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
-.route-card-legs{padding:8px 12px;overflow:hidden}
-.route-card-leg{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px;min-width:0;overflow:hidden}
-.route-leg-left{display:flex;align-items:center;gap:5px;min-width:0;flex:0 0 120px;max-width:120px;overflow:hidden}
-.route-leg-logo{width:26px;height:17px;object-fit:contain;flex-shrink:0}
-.route-leg-name{font-size:11px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px}
-.route-leg-route{font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--text);white-space:nowrap}
-.route-leg-arrow{color:var(--text-muted);font-size:10px;flex-shrink:0}
-.route-leg-dur{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);white-space:nowrap;margin-left:auto}
-.route-leg-class{font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
-.route-no-results{padding:24px 14px;text-align:center;color:var(--text-muted);font-size:13px;line-height:1.6}
+    .route-result-card{margin:8px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s}
+    .route-result-card:hover{border-color:var(--col-business);box-shadow:0 2px 10px var(--col-business-soft)}
+    .route-result-card.selected{border-color:var(--col-business);background:var(--col-business-soft)}
+    .route-card-header{padding:9px 12px 7px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .route-card-title{font-size:12px;font-weight:700;color:var(--text)}
+    .route-card-meta{display:flex;align-items:center;gap:6px}
+    .route-card-duration{font-size:11px;font-family:var(--font-mono);color:var(--text-dim);white-space:nowrap}
+    .route-card-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap}
+    .badge-direct{background:#d1fae5;color:#065f46;border:1px solid #6ee7b7}
+    .badge-1stop{background:rgba(14,165,233,0.12);color:#0369a1;border:1px solid rgba(14,165,233,0.35)}
+    .badge-2stop{background:rgba(124,58,237,0.1);color:#5b21b6;border:1px solid rgba(124,58,237,0.3)}
+    .badge-3stop{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+    .route-card-legs{padding:8px 12px;overflow:hidden}
+    .route-card-leg{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px;min-width:0;overflow:hidden}
+    .route-leg-left{display:flex;align-items:center;gap:5px;min-width:0;flex:0 0 120px;max-width:120px;overflow:hidden}
+    .route-leg-logo{width:26px;height:17px;object-fit:contain;flex-shrink:0}
+    .route-leg-name{font-size:11px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px}
+    .route-leg-route{font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--text);white-space:nowrap}
+    .route-leg-arrow{color:var(--text-muted);font-size:10px;flex-shrink:0}
+    .route-leg-dur{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);white-space:nowrap;margin-left:auto}
+    .route-leg-class{font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
+    .route-no-results{padding:24px 14px;text-align:center;color:var(--text-muted);font-size:13px;line-height:1.6}
 
-/* ── Info panel — now a map overlay, top-right of map ── */
-#info-panel{position:absolute;top:12px;right:12px;z-index:500;background:rgba(255,255,255,0.96);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;min-width:200px;max-width:260px;box-shadow:0 2px 12px rgba(0,0,0,0.1);display:none}
-#info-panel.visible{display:block}
-.info-title{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px}
-.info-name{font-size:14px;font-weight:700;color:var(--text);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.info-code{font-family:var(--font-mono);font-size:10px;color:var(--blue);margin:1px 0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.info-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px}
-.info-stat-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:6px 8px}
-.info-stat-label{font-size:9px;font-weight:700;color:var(--text-muted);letter-spacing:0.05em;text-transform:uppercase}
-.info-stat-val{font-size:18px;font-weight:800;color:var(--blue);font-family:var(--font-mono);margin-top:1px;line-height:1}
+    /* ── Info panel — now a map overlay, top-right of map ── */
+    #info-panel{position:absolute;top:12px;right:12px;z-index:500;background:rgba(255,255,255,0.96);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;min-width:200px;max-width:260px;box-shadow:0 2px 12px rgba(0,0,0,0.1);display:none}
+    #info-panel.visible{display:block}
+    .info-title{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px}
+    .info-name{font-size:14px;font-weight:700;color:var(--text);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .info-code{font-family:var(--font-mono);font-size:10px;color:var(--blue);margin:1px 0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .info-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px}
+    .info-stat-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:6px 8px}
+    .info-stat-label{font-size:9px;font-weight:700;color:var(--text-muted);letter-spacing:0.05em;text-transform:uppercase}
+    .info-stat-val{font-size:18px;font-weight:800;color:var(--blue);font-family:var(--font-mono);margin-top:1px;line-height:1}
 
-/* ── Map ── */
-#map-wrap{flex:1;position:relative;overflow:hidden}
-#map{width:100%;height:100%}
-.leaflet-container{background:#e8eef5}
-#map-status{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.95);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:12px;font-family:var(--font-mono);color:var(--text-dim);z-index:500;white-space:nowrap;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+    /* ── Map ── */
+    #map-wrap{flex:1;position:relative;overflow:hidden}
+    #map{width:100%;height:100%}
+    .leaflet-container{background:#e8eef5}
+    #map-status{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.95);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:12px;font-family:var(--font-mono);color:var(--text-dim);z-index:500;white-space:nowrap;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
 
-/* ── Loading ── */
-#loading-overlay{position:absolute;inset:0;background:#f0f4f8;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000;transition:opacity 0.4s}
-#loading-overlay.hidden{opacity:0;pointer-events:none}
-.loading-mark{width:52px;height:52px;background:var(--blue);border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;animation:pulse 1.5s ease-in-out infinite}
-.loading-mark svg{width:28px;height:28px;fill:white}
-@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(0.94);opacity:0.8}}
-.loading-text{font-size:15px;font-weight:700;color:var(--text)}
-.loading-sub{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-top:6px}
-.loading-bar-wrap{width:200px;height:3px;background:var(--border);border-radius:2px;margin-top:18px;overflow:hidden}
-.loading-bar{height:100%;background:var(--blue);border-radius:2px;width:0%;transition:width 0.3s}
+    /* ── Loading ── */
+    #loading-overlay{position:absolute;inset:0;background:#f0f4f8;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000;transition:opacity 0.4s}
+    #loading-overlay.hidden{opacity:0;pointer-events:none}
+    .loading-mark{width:52px;height:52px;background:var(--blue);border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;animation:pulse 1.5s ease-in-out infinite}
+    .loading-mark svg{width:28px;height:28px;fill:white}
+    @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(0.94);opacity:0.8}}
+    .loading-text{font-size:15px;font-weight:700;color:var(--text)}
+    .loading-sub{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-top:6px}
+    .loading-bar-wrap{width:200px;height:3px;background:var(--border);border-radius:2px;margin-top:18px;overflow:hidden}
+    .loading-bar{height:100%;background:var(--blue);border-radius:2px;width:0%;transition:width 0.3s}
 
-/* ── Buttons ── */
-#clear-btn{position:absolute;bottom:20px;right:20px;z-index:500;background:white;border:1.5px solid var(--border-mid);border-radius:20px;padding:7px 18px;font-size:13px;font-weight:600;font-family:var(--font-ui);color:var(--text-dim);cursor:pointer;transition:all 0.15s;display:none;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
-#clear-btn:hover{border-color:var(--blue);color:var(--blue)}
-#clear-btn.visible{display:block}
+    /* ── Buttons ── */
+    #clear-btn{position:absolute;bottom:20px;right:20px;z-index:500;background:white;border:1.5px solid var(--border-mid);border-radius:20px;padding:7px 18px;font-size:13px;font-weight:600;font-family:var(--font-ui);color:var(--text-dim);cursor:pointer;transition:all 0.15s;display:none;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+    #clear-btn:hover{border-color:var(--blue);color:var(--blue)}
+    #clear-btn.visible{display:block}
 
-/* ── Legend ── */
-#legend{position:absolute;bottom:20px;left:20px;z-index:500;background:rgba(255,255,255,0.96);border:1px solid var(--border);border-radius:var(--r);padding:11px 14px;font-size:12px;color:var(--text-dim);box-shadow:0 2px 8px rgba(0,0,0,0.08)}
-.legend-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:8px}
-.legend-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
-.legend-row:last-child{margin-bottom:0}
-.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.25)}
-.legend-line{width:24px;height:2.5px;flex-shrink:0;border-radius:2px}
+    /* ── Legend ── */
+    #legend{position:absolute;bottom:20px;left:20px;z-index:500;background:rgba(255,255,255,0.96);border:1px solid var(--border);border-radius:var(--r);padding:11px 14px;font-size:12px;color:var(--text-dim);box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+    .legend-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:8px}
+    .legend-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+    .legend-row:last-child{margin-bottom:0}
+    .legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.25)}
+    .legend-line{width:24px;height:2.5px;flex-shrink:0;border-radius:2px}
 
-/* ── Markers ── */
-.ap-marker{border-radius:50%;border:2.5px solid white;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
-.ap-hub{width:14px;height:14px;background:var(--blue);box-shadow:0 2px 8px rgba(26,107,250,0.55)}
-.ap-economy{width:12px;height:12px;background:var(--col-economy);box-shadow:0 1px 5px rgba(14,165,233,0.5)}
-.ap-business{width:12px;height:12px;background:var(--col-business);box-shadow:0 1px 5px rgba(124,58,237,0.5)}
-.ap-other{width:12px;height:12px;background:var(--col-other);box-shadow:0 1px 5px rgba(232,101,10,0.45)}
-.ap-route{width:14px;height:14px;background:var(--col-business);box-shadow:0 2px 8px rgba(124,58,237,0.55)}
-.ap-waypoint{width:11px;height:11px;background:#6d28d9;box-shadow:0 1px 4px rgba(109,40,217,0.4)}
+    /* ── Markers ── */
+    .ap-marker{border-radius:50%;border:2.5px solid white;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+    .ap-hub{width:14px;height:14px;background:var(--blue);box-shadow:0 2px 8px rgba(26,107,250,0.55)}
+    .ap-economy{width:12px;height:12px;background:var(--col-economy);box-shadow:0 1px 5px rgba(14,165,233,0.5)}
+    .ap-business{width:12px;height:12px;background:var(--col-business);box-shadow:0 1px 5px rgba(124,58,237,0.5)}
+    .ap-other{width:12px;height:12px;background:var(--col-other);box-shadow:0 1px 5px rgba(232,101,10,0.45)}
+    .ap-route{width:14px;height:14px;background:var(--col-business);box-shadow:0 2px 8px rgba(124,58,237,0.55)}
+    .ap-waypoint{width:11px;height:11px;background:#6d28d9;box-shadow:0 1px 4px rgba(109,40,217,0.4)}
 
-/* ── Error ── */
-#error-banner{display:none;position:absolute;top:56px;left:50%;transform:translateX(-50%);background:#fff1f2;border:1px solid #fca5a5;border-radius:var(--r-sm);padding:8px 16px;font-size:12px;color:#991b1b;z-index:600;max-width:440px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
-#error-banner.visible{display:block}
-*{scrollbar-width:thin;scrollbar-color:var(--border) transparent}
-```
-
+    /* ── Error ── */
+    #error-banner{display:none;position:absolute;top:56px;left:50%;transform:translateX(-50%);background:#fff1f2;border:1px solid #fca5a5;border-radius:var(--r-sm);padding:8px 16px;font-size:12px;color:#991b1b;z-index:600;max-width:440px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+    #error-banner.visible{display:block}
+    *{scrollbar-width:thin;scrollbar-color:var(--border) transparent}
   </style>
 </head>
 <body>
@@ -246,137 +242,135 @@
       </div>
     </div>
 
-```
-<div id="tabs">
-  <button class="tab active" data-tab="airports">&#9992; Airports</button>
-  <button class="tab" data-tab="airlines">&#9671; Airlines</button>
-  <button class="tab" data-tab="routes">&#8644; Routes</button>
-</div>
-
-<div id="panel-body">
-
-  <!-- ══ AIRPORTS TAB ══ -->
-  <div id="tab-airports" class="tab-content active">
-    <div class="search-wrap">
-      <span class="search-label">Search airport</span>
-      <div class="search-input-wrap">
-        <input class="search-input" id="airport-search" type="text" placeholder="Name, city or IATA code..." autocomplete="off"/>
-        <button class="search-clear" id="airport-search-clear" onclick="clearSearch('airport')" title="Clear">&#10005;</button>
-      </div>
+    <div id="tabs">
+      <button class="tab active" data-tab="airports">&#9992; Airports</button>
+      <button class="tab" data-tab="airlines">&#9671; Airlines</button>
+      <button class="tab" data-tab="routes">&#8644; Routes</button>
     </div>
-    <div class="controls-wrap">
-      <div class="toggle-row">
-        <span class="toggle-label">Show all airlines on map</span>
-        <label class="toggle-switch"><input type="checkbox" id="all-airlines-toggle"/><span class="toggle-slider"></span></label>
-      </div>
-      <div class="filter-row">
-        <span class="filter-row-label">Show routes for class</span>
-        <div class="pills" id="airport-class-pills">
-          <button class="pill active" data-class="all">All</button>
-          <button class="pill" data-class="Y" style="border-color:rgba(14,165,233,0.4);color:#0369a1">Economy</button>
-          <button class="pill" data-class="J" style="border-color:rgba(124,58,237,0.4);color:#5b21b6">Business</button>
-        </div>
-      </div>
-    </div>
-    <div class="result-count" id="airport-count"></div>
-    <div class="result-list" id="airport-list"></div>
-  </div>
 
-  <!-- ══ AIRLINES TAB ══ -->
-  <div id="tab-airlines" class="tab-content">
-    <div class="search-wrap">
-      <span class="search-label">Search airline</span>
-      <div class="search-input-wrap">
-        <input class="search-input" id="airline-search" type="text" placeholder="Airline name or IATA code..." autocomplete="off"/>
-        <button class="search-clear" id="airline-search-clear" onclick="clearSearch('airline')" title="Clear">&#10005;</button>
-      </div>
-    </div>
-    <div class="controls-wrap">
-      <div class="toggle-row">
-        <span class="toggle-label">Include non-staff airlines</span>
-        <label class="toggle-switch"><input type="checkbox" id="show-all-airlines-toggle"/><span class="toggle-slider"></span></label>
-      </div>
-      <div class="filter-row">
-        <span class="filter-row-label">Filter staff airlines by class</span>
-        <div class="pills" id="airline-class-pills">
-          <button class="pill active" data-class="all">All</button>
-          <button class="pill" data-class="Y" style="border-color:rgba(14,165,233,0.4);color:#0369a1">Economy</button>
-          <button class="pill" data-class="J" style="border-color:rgba(124,58,237,0.4);color:#5b21b6">Business</button>
-        </div>
-      </div>
-    </div>
-    <div class="result-count" id="airline-count"></div>
-    <div class="result-list" id="airline-list"></div>
-  </div>
+    <div id="panel-body">
 
-  <!-- ══ ROUTES TAB ══ -->
-  <div id="tab-routes" class="tab-content" style="position:relative">
-    <!-- Controls always visible at top -->
-    <div class="route-finder-wrap">
-      <!-- From airport -->
-      <div class="route-airport-box" id="route-origin-box" onclick="activateRoutePicker('origin')">
-        <div class="route-box-label">From</div>
-        <div class="route-box-value placeholder" id="route-origin-val">Select departure airport</div>
-        <div class="route-box-sub" id="route-origin-sub" style="display:none"></div>
-        <button class="route-box-clear" id="route-origin-clear" onclick="clearRouteEnd(event,'origin')">&#10005;</button>
-      </div>
-      <button class="route-swap-btn" onclick="swapRouteAirports()">&#8645;</button>
-      <!-- To airport -->
-      <div class="route-airport-box" id="route-dest-box" onclick="activateRoutePicker('dest')">
-        <div class="route-box-label">To</div>
-        <div class="route-box-value placeholder" id="route-dest-val">Select arrival airport</div>
-        <div class="route-box-sub" id="route-dest-sub" style="display:none"></div>
-        <button class="route-box-clear" id="route-dest-clear" onclick="clearRouteEnd(event,'dest')">&#10005;</button>
-      </div>
-      <div class="controls-wrap" style="padding:0">
-        <div class="filter-row">
-          <span class="filter-row-label">Filter by class</span>
-          <div class="pills" id="route-class-pills">
-            <button class="pill active" data-class="all">All</button>
-            <button class="pill" data-class="Y" style="border-color:rgba(14,165,233,0.4);color:#0369a1">Economy</button>
-            <button class="pill" data-class="J" style="border-color:rgba(124,58,237,0.4);color:#5b21b6">Business</button>
+      <!-- ══ AIRPORTS TAB ══ -->
+      <div id="tab-airports" class="tab-content active">
+        <div class="search-wrap">
+          <span class="search-label">Search airport</span>
+          <div class="search-input-wrap">
+            <input class="search-input" id="airport-search" type="text" placeholder="Name, city or IATA code..." autocomplete="off"/>
+            <button class="search-clear" id="airport-search-clear" onclick="clearSearch('airport')" title="Clear">&#10005;</button>
           </div>
         </div>
-      </div>
-      <div class="route-options">
-        <div class="route-max-toggle">
-          <span>Max stops:</span>
-          <select id="max-stops-select" style="border:1.5px solid var(--border-mid);border-radius:5px;padding:3px 6px;font-size:12px;font-family:var(--font-ui);color:var(--text);background:var(--surface);cursor:pointer">
-            <option value="1">Direct only</option>
-            <option value="2">1 stop</option>
-            <option value="3" selected>2 stops</option>
-            <option value="4">3 stops</option>
-          </select>
+        <div class="controls-wrap">
+          <div class="toggle-row">
+            <span class="toggle-label">Show all airlines on map</span>
+            <label class="toggle-switch"><input type="checkbox" id="all-airlines-toggle"/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="filter-row">
+            <span class="filter-row-label">Show routes for class</span>
+            <div class="pills" id="airport-class-pills">
+              <button class="pill active" data-class="all">All</button>
+              <button class="pill" data-class="Y" style="border-color:rgba(14,165,233,0.4);color:#0369a1">Economy</button>
+              <button class="pill" data-class="J" style="border-color:rgba(124,58,237,0.4);color:#5b21b6">Business</button>
+            </div>
+          </div>
         </div>
-        <button class="route-search-btn" id="route-search-btn" disabled onclick="findRoutes()">Find Routes</button>
+        <div class="result-count" id="airport-count"></div>
+        <div class="result-list" id="airport-list"></div>
       </div>
-    </div>
 
-    <!-- Airport picker — full-panel overlay, slides over routes controls -->
-    <div class="route-picker-panel" id="route-picker-panel">
-      <div class="route-picker-topbar">
-        <button class="route-picker-back" onclick="cancelRoutePicker()" title="Back">&#8592;</button>
-        <span class="route-picker-title" id="route-picker-header">Select departure airport</span>
+      <!-- ══ AIRLINES TAB ══ -->
+      <div id="tab-airlines" class="tab-content">
+        <div class="search-wrap">
+          <span class="search-label">Search airline</span>
+          <div class="search-input-wrap">
+            <input class="search-input" id="airline-search" type="text" placeholder="Airline name or IATA code..." autocomplete="off"/>
+            <button class="search-clear" id="airline-search-clear" onclick="clearSearch('airline')" title="Clear">&#10005;</button>
+          </div>
+        </div>
+        <div class="controls-wrap">
+          <div class="toggle-row">
+            <span class="toggle-label">Include non-staff airlines</span>
+            <label class="toggle-switch"><input type="checkbox" id="show-all-airlines-toggle"/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="filter-row">
+            <span class="filter-row-label">Filter staff airlines by class</span>
+            <div class="pills" id="airline-class-pills">
+              <button class="pill active" data-class="all">All</button>
+              <button class="pill" data-class="Y" style="border-color:rgba(14,165,233,0.4);color:#0369a1">Economy</button>
+              <button class="pill" data-class="J" style="border-color:rgba(124,58,237,0.4);color:#5b21b6">Business</button>
+            </div>
+          </div>
+        </div>
+        <div class="result-count" id="airline-count"></div>
+        <div class="result-list" id="airline-list"></div>
       </div>
-      <div class="search-wrap" style="padding-top:10px;padding-bottom:4px">
-        <div class="search-input-wrap">
-          <input class="search-input" id="route-picker-search" type="text" placeholder="Search airports..." autocomplete="off"/>
-          <button class="search-clear" id="route-picker-clear" onclick="clearRoutePickerSearch()" title="Clear">&#10005;</button>
+
+      <!-- ══ ROUTES TAB ══ -->
+      <div id="tab-routes" class="tab-content" style="position:relative">
+        <!-- Controls always visible at top -->
+        <div class="route-finder-wrap">
+          <!-- From airport -->
+          <div class="route-airport-box" id="route-origin-box" onclick="activateRoutePicker('origin')">
+            <div class="route-box-label">From</div>
+            <div class="route-box-value placeholder" id="route-origin-val">Select departure airport</div>
+            <div class="route-box-sub" id="route-origin-sub" style="display:none"></div>
+            <button class="route-box-clear" id="route-origin-clear" onclick="clearRouteEnd(event,'origin')">&#10005;</button>
+          </div>
+          <button class="route-swap-btn" onclick="swapRouteAirports()">&#8645;</button>
+          <!-- To airport -->
+          <div class="route-airport-box" id="route-dest-box" onclick="activateRoutePicker('dest')">
+            <div class="route-box-label">To</div>
+            <div class="route-box-value placeholder" id="route-dest-val">Select arrival airport</div>
+            <div class="route-box-sub" id="route-dest-sub" style="display:none"></div>
+            <button class="route-box-clear" id="route-dest-clear" onclick="clearRouteEnd(event,'dest')">&#10005;</button>
+          </div>
+          <div class="controls-wrap" style="padding:0">
+            <div class="filter-row">
+              <span class="filter-row-label">Filter by class</span>
+              <div class="pills" id="route-class-pills">
+                <button class="pill active" data-class="all">All</button>
+                <button class="pill" data-class="Y" style="border-color:rgba(14,165,233,0.4);color:#0369a1">Economy</button>
+                <button class="pill" data-class="J" style="border-color:rgba(124,58,237,0.4);color:#5b21b6">Business</button>
+              </div>
+            </div>
+          </div>
+          <div class="route-options">
+            <div class="route-max-toggle">
+              <span>Max stops:</span>
+              <select id="max-stops-select" style="border:1.5px solid var(--border-mid);border-radius:5px;padding:3px 6px;font-size:12px;font-family:var(--font-ui);color:var(--text);background:var(--surface);cursor:pointer">
+                <option value="1">Direct only</option>
+                <option value="2">1 stop</option>
+                <option value="3" selected>2 stops</option>
+                <option value="4">3 stops</option>
+              </select>
+            </div>
+            <button class="route-search-btn" id="route-search-btn" disabled onclick="findRoutes()">Find Routes</button>
+          </div>
+        </div>
+
+        <!-- Airport picker — full-panel overlay, slides over routes controls -->
+        <div class="route-picker-panel" id="route-picker-panel">
+          <div class="route-picker-topbar">
+            <button class="route-picker-back" onclick="cancelRoutePicker()" title="Back">&#8592;</button>
+            <span class="route-picker-title" id="route-picker-header">Select departure airport</span>
+          </div>
+          <div class="search-wrap" style="padding-top:10px;padding-bottom:4px">
+            <div class="search-input-wrap">
+              <input class="search-input" id="route-picker-search" type="text" placeholder="Search airports..." autocomplete="off"/>
+              <button class="search-clear" id="route-picker-clear" onclick="clearRoutePickerSearch()" title="Clear">&#10005;</button>
+            </div>
+          </div>
+          <div class="result-count" id="route-picker-count"></div>
+          <div class="result-list" id="route-picker-airports"></div>
+        </div>
+
+        <!-- Route results -->
+        <div class="route-results" id="route-results">
+          <div class="result-count" id="route-results-count"></div>
+          <div id="route-results-list"></div>
         </div>
       </div>
-      <div class="result-count" id="route-picker-count"></div>
-      <div class="result-list" id="route-picker-airports"></div>
-    </div>
 
-    <!-- Route results -->
-    <div class="route-results" id="route-results">
-      <div class="result-count" id="route-results-count"></div>
-      <div id="route-results-list"></div>
-    </div>
-  </div>
-
-</div><!-- /panel-body -->
-```
+    </div><!-- /panel-body -->
 
   </div><!-- /panel -->
 
@@ -401,20 +395,17 @@
       </div>
     </div>
 
-```
-<div id="legend">
-  <div class="legend-title">Legend</div>
-  <div class="legend-row"><div class="legend-dot" style="background:var(--blue)"></div><span>Origin / hub</span></div>
-  <div class="legend-row"><div class="legend-dot" style="background:var(--col-economy)"></div><span>Economy destination</span></div>
-  <div class="legend-row"><div class="legend-dot" style="background:var(--col-business)"></div><span>Business destination</span></div>
-  <div class="legend-row"><div class="legend-dot" style="background:var(--col-other)"></div><span>Non-staff destination</span></div>
-  <div class="legend-row"><div class="legend-line" style="background:var(--col-economy)"></div><span>Economy route</span></div>
-  <div class="legend-row"><div class="legend-line" style="background:var(--col-business)"></div><span>Business route</span></div>
-  <div class="legend-row"><div class="legend-line" style="background:var(--col-other)"></div><span>Non-staff route</span></div>
-</div>
-<button id="clear-btn" onclick="clearSelection()">&#10005; Clear</button>
-```
-
+    <div id="legend">
+      <div class="legend-title">Legend</div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--blue)"></div><span>Origin / hub</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--col-economy)"></div><span>Economy destination</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--col-business)"></div><span>Business destination</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--col-other)"></div><span>Non-staff destination</span></div>
+      <div class="legend-row"><div class="legend-line" style="background:var(--col-economy)"></div><span>Economy route</span></div>
+      <div class="legend-row"><div class="legend-line" style="background:var(--col-business)"></div><span>Business route</span></div>
+      <div class="legend-row"><div class="legend-line" style="background:var(--col-other)"></div><span>Non-staff route</span></div>
+    </div>
+    <button id="clear-btn" onclick="clearSelection()">&#10005; Clear</button>
   </div>
 </div>
 
@@ -1268,6 +1259,5 @@ document.head.appendChild(_s);
 
 init();
 </script>
-
 </body>
 </html>
