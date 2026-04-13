@@ -35,14 +35,14 @@
        overflow/scroll to work: panel → panel-body (min-height:0) →
        tab-content (min-height:0) → result-list (overflow-y:auto, flex:1).
     */
-    #panel{width:var(--panel-w);max-width:var(--panel-w);flex-shrink:0;flex-grow:0;flex-basis:var(--panel-w);height:100%;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:1000;overflow:hidden;box-shadow:3px 0 16px rgba(0,0,0,0.06)}
+    /* ── Panel: absolutely fixed width using flex shorthand ── */
+    #panel{flex:0 0 var(--panel-w);width:var(--panel-w);height:100%;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;box-shadow:3px 0 16px rgba(0,0,0,0.06)}
     #panel-header{padding:14px 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
     .logo-row{display:flex;align-items:center;gap:10px}
-    /* Custom logo image — falls back to SVG mark if image missing */
     .logo-img{height:38px;width:auto;max-width:180px;object-fit:contain;display:block}
     .logo-img-fallback{display:none;width:36px;height:36px;background:var(--blue);border-radius:9px;align-items:center;justify-content:center;flex-shrink:0}
     .logo-img-fallback svg{width:22px;height:22px;fill:white}
-    .logo-text{display:flex;flex-direction:column;line-height:1.1;min-width:0}
+    .logo-text{display:flex;flex-direction:column;line-height:1.1;min-width:0;overflow:hidden}
     .logo-title{font-size:17px;font-weight:800;color:var(--text);letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .logo-sub{font-size:10px;font-weight:500;color:var(--text-muted);font-family:var(--font-mono);letter-spacing:0.05em;margin-top:1px}
 
@@ -52,16 +52,23 @@
     .tab:hover{color:var(--text-dim)}
     .tab.active{color:var(--blue);border-bottom-color:var(--blue)}
 
-    /* ── Panel body ──
-       min-height:0 is the critical fix: without it, a flex child ignores
-       overflow and expands to fit its content, killing scroll.
-    */
-    #panel-body{flex:1;min-height:0;min-width:0;flex-shrink:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
-    .tab-content{display:none;flex-direction:column;flex:1;min-height:0;min-width:0;overflow-x:hidden;overflow-y:hidden}
+    /* ── Panel body: the ONLY scroll container in the panel ──
+       flex:1 1 0 + min-height:0 lets it shrink below content size.
+       overflow-y:auto provides the scroll.
+       overflow-x:hidden stops content blowing the panel wider.
+       position:relative needed for the route picker overlay.
+    ── */
+    #panel-body{flex:1 1 0;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;position:relative}
+    #panel-body::-webkit-scrollbar{width:3px}
+    #panel-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+    /* tab-content fills panel-body exactly — NO overflow set here,
+       panel-body handles all scrolling */
+    .tab-content{display:none;flex-direction:column;flex-shrink:0;width:100%}
     .tab-content.active{display:flex}
 
     /* ── Search ── */
-    .search-wrap{padding:14px 14px 8px;flex-shrink:0;min-width:0}
+    .search-wrap{padding:14px 14px 8px;flex-shrink:0;width:100%}
     .search-label{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;display:block}
     .search-input-wrap{position:relative;min-width:0;overflow:hidden}
     .search-input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:9px 60px 9px 11px;font-size:14px;font-family:var(--font-ui);color:var(--text);outline:none;transition:border-color 0.15s,box-shadow 0.15s}
@@ -72,7 +79,7 @@
     .search-clear:hover{background:var(--border);color:var(--text)}
 
     /* ── Controls ── */
-    .controls-wrap{padding:4px 14px 10px;flex-shrink:0;min-width:0;display:flex;flex-direction:column;gap:8px}
+    .controls-wrap{padding:4px 14px 10px;width:100%;display:flex;flex-direction:column;gap:8px}
     .toggle-row{display:flex;align-items:center;justify-content:space-between}
     .toggle-label{font-size:12px;font-weight:600;color:var(--text-dim);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .toggle-switch{position:relative;width:38px;height:22px}
@@ -88,18 +95,16 @@
     .pill:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-soft)}
     .pill.active{background:var(--blue);border-color:var(--blue);color:#fff}
 
-    /* ── Result list — the actual scroll container ── */
-    .result-list{flex:1;min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden}
-    .result-list::-webkit-scrollbar{width:3px}
-    .result-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-    .result-count{padding:4px 14px;font-size:11px;font-family:var(--font-mono);color:var(--text-muted);flex-shrink:0}
-    .result-item{padding:10px 14px;cursor:pointer;border-left:3px solid transparent;transition:background 0.12s,border-color 0.12s;display:flex;align-items:center;gap:10px;min-width:0;max-width:100%;overflow:hidden}
+    /* ── Result list — children flow naturally; panel-body scrolls ── */
+    .result-list{flex-shrink:0;width:100%}
+    .result-count{padding:4px 14px;font-size:11px;font-family:var(--font-mono);color:var(--text-muted);width:100%}
+    .result-item{padding:10px 14px;cursor:pointer;border-left:3px solid transparent;transition:background 0.12s,border-color 0.12s;display:flex;align-items:center;gap:10px;width:100%;min-width:0;overflow:hidden}
     .result-item:hover{background:var(--surface2);border-left-color:var(--blue-mid)}
     .result-item.selected{background:var(--blue-soft);border-left-color:var(--blue)}
     .result-logo{width:44px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg);border:1px solid var(--border);border-radius:5px;overflow:hidden;padding:2px}
     .result-logo img{max-width:40px;max-height:24px;object-fit:contain;display:block}
     .result-logo .logo-fallback{font-size:9px;font-weight:700;font-family:var(--font-mono);color:var(--text-muted)}
-    .result-body{flex:1;min-width:0;overflow:hidden}
+    .result-body{flex:1 1 0;min-width:0;overflow:hidden;width:0}
     .result-code{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--blue)}
     .result-name{font-size:13px;font-weight:600;color:var(--text);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
     .result-meta{font-size:11px;font-family:var(--font-mono);color:var(--text-muted);margin-top:1px}
@@ -134,16 +139,16 @@
     .route-search-btn:disabled{background:var(--border-mid);color:var(--text-muted);cursor:not-allowed}
 
     /* Route airport picker — full panel overlay slides over everything */
-    .route-picker-panel{display:none;flex-direction:column;position:absolute;top:0;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-right:1px solid var(--border)}
-    .route-picker-panel.visible{display:flex}
+    .route-picker-panel{display:none;flex-direction:column;position:absolute;top:0;left:0;right:0;bottom:0;z-index:20;background:var(--surface);overflow:hidden}
+    .route-picker-panel.visible{display:flex;flex-direction:column}
     .route-picker-topbar{display:flex;align-items:center;gap:10px;padding:14px 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
     .route-picker-back{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:18px;padding:2px 4px;border-radius:4px;line-height:1;flex-shrink:0}
     .route-picker-back:hover{color:var(--blue);background:var(--blue-soft)}
     .route-picker-title{font-size:13px;font-weight:700;color:var(--text)}
     .route-picker-header{padding:4px 14px 2px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);font-family:var(--font-mono);flex-shrink:0}
 
-    .route-results{flex:1;min-height:0;overflow-y:auto;display:none;padding-bottom:8px}
-    .route-results.visible{display:block}
+    .route-results{display:none;flex-shrink:0;width:100%;padding-bottom:8px}
+    .route-results.visible{display:block;width:100%}
 
     .route-result-card{margin:8px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s}
     .route-result-card:hover{border-color:var(--col-business);box-shadow:0 2px 10px var(--col-business-soft)}
@@ -221,6 +226,7 @@
     /* ── Error ── */
     #error-banner{display:none;position:absolute;top:56px;left:50%;transform:translateX(-50%);background:#fff1f2;border:1px solid #fca5a5;border-radius:var(--r-sm);padding:8px 16px;font-size:12px;color:#991b1b;z-index:600;max-width:440px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
     #error-banner.visible{display:block}
+    #route-picker-airports{flex:1 1 0;min-height:0;overflow-y:auto;overflow-x:hidden}
     *{scrollbar-width:thin;scrollbar-color:var(--border) transparent}
   </style>
 </head>
