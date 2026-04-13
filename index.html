@@ -58,14 +58,14 @@
    min-height:0 is the critical fix: without it, a flex child ignores
    overflow and expands to fit its content, killing scroll.
 */
-#panel-body{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;position:relative}
-.tab-content{display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+#panel-body{flex:1;min-height:0;min-width:0;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.tab-content{display:none;flex-direction:column;flex:1;min-height:0;min-width:0;overflow:hidden}
 .tab-content.active{display:flex}
 
 /* ── Search ── */
-.search-wrap{padding:14px 14px 8px;flex-shrink:0}
+.search-wrap{padding:14px 14px 8px;flex-shrink:0;min-width:0}
 .search-label{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;display:block}
-.search-input-wrap{position:relative}
+.search-input-wrap{position:relative;min-width:0;overflow:hidden}
 .search-input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:9px 60px 9px 11px;font-size:14px;font-family:var(--font-ui);color:var(--text);outline:none;transition:border-color 0.15s,box-shadow 0.15s}
 .search-input::placeholder{color:var(--text-muted)}
 .search-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
@@ -74,7 +74,7 @@
 .search-clear:hover{background:var(--border);color:var(--text)}
 
 /* ── Controls ── */
-.controls-wrap{padding:4px 14px 10px;flex-shrink:0;display:flex;flex-direction:column;gap:8px}
+.controls-wrap{padding:4px 14px 10px;flex-shrink:0;min-width:0;display:flex;flex-direction:column;gap:8px}
 .toggle-row{display:flex;align-items:center;justify-content:space-between}
 .toggle-label{font-size:12px;font-weight:600;color:var(--text-dim)}
 .toggle-switch{position:relative;width:38px;height:22px}
@@ -91,11 +91,11 @@
 .pill.active{background:var(--blue);border-color:var(--blue);color:#fff}
 
 /* ── Result list — the actual scroll container ── */
-.result-list{flex:1;min-height:0;overflow-y:auto}
+.result-list{flex:1;min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden}
 .result-list::-webkit-scrollbar{width:3px}
 .result-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-.result-count{padding:4px 14px;font-size:11px;font-family:var(--font-mono);color:var(--text-muted)}
-.result-item{padding:10px 14px;cursor:pointer;border-left:3px solid transparent;transition:background 0.12s,border-color 0.12s;display:flex;align-items:center;gap:10px;min-width:0;width:100%}
+.result-count{padding:4px 14px;font-size:11px;font-family:var(--font-mono);color:var(--text-muted);flex-shrink:0}
+.result-item{padding:10px 14px;cursor:pointer;border-left:3px solid transparent;transition:background 0.12s,border-color 0.12s;display:flex;align-items:center;gap:10px;min-width:0;max-width:100%;overflow:hidden}
 .result-item:hover{background:var(--surface2);border-left-color:var(--blue-mid)}
 .result-item.selected{background:var(--blue-soft);border-left-color:var(--blue)}
 .result-logo{width:44px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg);border:1px solid var(--border);border-radius:5px;overflow:hidden;padding:2px}
@@ -114,7 +114,7 @@
 .class-Y{background:rgba(14,165,233,0.1);color:#0369a1;border:1px solid rgba(14,165,233,0.3)}
 
 /* ── Route finder ── */
-.route-finder-wrap{padding:14px;display:flex;flex-direction:column;gap:8px;flex-shrink:0;overflow-y:auto}
+.route-finder-wrap{padding:14px;display:flex;flex-direction:column;gap:8px;flex-shrink:0}
 /* Route airport selector — now inline search + list like other tabs */
 .route-airport-box{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:10px 36px 10px 12px;cursor:pointer;transition:border-color 0.15s;position:relative}
 .route-airport-box:hover{border-color:var(--blue)}
@@ -147,7 +147,7 @@
 .route-results{flex:1;min-height:0;overflow-y:auto;display:none;padding-bottom:8px}
 .route-results.visible{display:block;overflow-y:auto}
 
-.route-result-card{margin:8px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s}
+.route-result-card{margin:8px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s;max-width:calc(var(--panel-w) - 28px)}
 .route-result-card:hover{border-color:var(--col-business);box-shadow:0 2px 10px var(--col-business-soft)}
 .route-result-card.selected{border-color:var(--col-business);background:var(--col-business-soft)}
 .route-card-header{padding:9px 12px 7px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -161,7 +161,7 @@
 .badge-3stop{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
 .route-card-legs{padding:8px 12px}
 .route-card-leg{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px}
-.route-leg-left{display:flex;align-items:center;gap:5px;min-width:0;flex:0 0 auto;max-width:140px}
+.route-leg-left{display:flex;align-items:center;gap:5px;min-width:0;flex:0 0 120px;max-width:120px;overflow:hidden}
 .route-leg-logo{width:26px;height:17px;object-fit:contain;flex-shrink:0}
 .route-leg-name{font-size:11px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px}
 .route-leg-route{font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--text);white-space:nowrap}
@@ -310,7 +310,7 @@
   </div>
 
   <!-- ══ ROUTES TAB ══ -->
-  <div id="tab-routes" class="tab-content">
+  <div id="tab-routes" class="tab-content" style="position:relative">
     <!-- Controls always visible at top -->
     <div class="route-finder-wrap">
       <!-- From airport -->
