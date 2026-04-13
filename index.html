@@ -37,7 +37,7 @@
    overflow/scroll to work: panel → panel-body (min-height:0) →
    tab-content (min-height:0) → result-list (overflow-y:auto, flex:1).
 */
-#panel{width:var(--panel-w);min-width:var(--panel-w);max-width:var(--panel-w);height:100%;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:1000;overflow:hidden;box-shadow:3px 0 16px rgba(0,0,0,0.06)}
+#panel{width:var(--panel-w);max-width:var(--panel-w);flex-shrink:0;flex-grow:0;flex-basis:var(--panel-w);height:100%;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:1000;overflow:hidden;box-shadow:3px 0 16px rgba(0,0,0,0.06)}
 #panel-header{padding:14px 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
 .logo-row{display:flex;align-items:center;gap:10px}
 /* Custom logo image — falls back to SVG mark if image missing */
@@ -58,8 +58,8 @@
    min-height:0 is the critical fix: without it, a flex child ignores
    overflow and expands to fit its content, killing scroll.
 */
-#panel-body{flex:1;min-height:0;min-width:0;display:flex;flex-direction:column;overflow:hidden;position:relative}
-.tab-content{display:none;flex-direction:column;flex:1;min-height:0;min-width:0;overflow:hidden}
+#panel-body{flex:1;min-height:0;min-width:0;flex-shrink:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.tab-content{display:none;flex-direction:column;flex:1;min-height:0;min-width:0;overflow-x:hidden;overflow-y:hidden}
 .tab-content.active{display:flex}
 
 /* ── Search ── */
@@ -76,7 +76,7 @@
 /* ── Controls ── */
 .controls-wrap{padding:4px 14px 10px;flex-shrink:0;min-width:0;display:flex;flex-direction:column;gap:8px}
 .toggle-row{display:flex;align-items:center;justify-content:space-between}
-.toggle-label{font-size:12px;font-weight:600;color:var(--text-dim)}
+.toggle-label{font-size:12px;font-weight:600;color:var(--text-dim);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .toggle-switch{position:relative;width:38px;height:22px}
 .toggle-switch input{opacity:0;width:0;height:0}
 .toggle-slider{position:absolute;inset:0;background:var(--border-mid);border-radius:22px;cursor:pointer;transition:background 0.2s}
@@ -101,7 +101,7 @@
 .result-logo{width:44px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg);border:1px solid var(--border);border-radius:5px;overflow:hidden;padding:2px}
 .result-logo img{max-width:40px;max-height:24px;object-fit:contain;display:block}
 .result-logo .logo-fallback{font-size:9px;font-weight:700;font-family:var(--font-mono);color:var(--text-muted)}
-.result-body{flex:1;min-width:0}
+.result-body{flex:1;min-width:0;overflow:hidden}
 .result-code{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--blue)}
 .result-name{font-size:13px;font-weight:600;color:var(--text);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .result-meta{font-size:11px;font-family:var(--font-mono);color:var(--text-muted);margin-top:1px}
@@ -145,9 +145,9 @@
 .route-picker-header{padding:4px 14px 2px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);font-family:var(--font-mono);flex-shrink:0}
 
 .route-results{flex:1;min-height:0;overflow-y:auto;display:none;padding-bottom:8px}
-.route-results.visible{display:block;overflow-y:auto}
+.route-results.visible{display:block}
 
-.route-result-card{margin:8px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s;max-width:calc(var(--panel-w) - 28px)}
+.route-result-card{margin:8px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s}
 .route-result-card:hover{border-color:var(--col-business);box-shadow:0 2px 10px var(--col-business-soft)}
 .route-result-card.selected{border-color:var(--col-business);background:var(--col-business-soft)}
 .route-card-header{padding:9px 12px 7px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -159,8 +159,8 @@
 .badge-1stop{background:rgba(14,165,233,0.12);color:#0369a1;border:1px solid rgba(14,165,233,0.35)}
 .badge-2stop{background:rgba(124,58,237,0.1);color:#5b21b6;border:1px solid rgba(124,58,237,0.3)}
 .badge-3stop{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
-.route-card-legs{padding:8px 12px}
-.route-card-leg{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px}
+.route-card-legs{padding:8px 12px;overflow:hidden}
+.route-card-leg{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px;min-width:0;overflow:hidden}
 .route-leg-left{display:flex;align-items:center;gap:5px;min-width:0;flex:0 0 120px;max-width:120px;overflow:hidden}
 .route-leg-logo{width:26px;height:17px;object-fit:contain;flex-shrink:0}
 .route-leg-name{font-size:11px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px}
