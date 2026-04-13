@@ -170,11 +170,15 @@
 ],
 
 "blocked_airports": [
-"DOH"
+    "BEY",
+    "TLV",
+    "BGW",
+    "BSR",
+    "NJF",
+    "OSM",
+    "SDA"
   ],
-  "blocked_airlines": [
-"QF"
-  ]
+  "blocked_airlines": []
 
 
 }
