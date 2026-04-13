@@ -31,16 +31,21 @@
     #app{display:flex;height:100vh;width:100vw}
 
 ```
-/* ── Panel ── */
-#panel{width:var(--panel-w);min-width:var(--panel-w);height:100%;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:1000;overflow:hidden;box-shadow:3px 0 16px rgba(0,0,0,0.06)}
+/* ── Panel ──
+   max-width locks the column to exactly --panel-w regardless of content.
+   The flex column chain must have explicit bounds at every level for
+   overflow/scroll to work: panel → panel-body (min-height:0) →
+   tab-content (min-height:0) → result-list (overflow-y:auto, flex:1).
+*/
+#panel{width:var(--panel-w);min-width:var(--panel-w);max-width:var(--panel-w);height:100%;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:1000;overflow:hidden;box-shadow:3px 0 16px rgba(0,0,0,0.06)}
 #panel-header{padding:14px 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
 .logo-row{display:flex;align-items:center;gap:10px}
 /* Custom logo image — falls back to SVG mark if image missing */
-.logo-img{height:38px;width:auto;object-fit:contain;display:block}
+.logo-img{height:38px;width:auto;max-width:180px;object-fit:contain;display:block}
 .logo-img-fallback{display:none;width:36px;height:36px;background:var(--blue);border-radius:9px;align-items:center;justify-content:center;flex-shrink:0}
 .logo-img-fallback svg{width:22px;height:22px;fill:white}
-.logo-text{display:flex;flex-direction:column;line-height:1.1}
-.logo-title{font-size:17px;font-weight:800;color:var(--text);letter-spacing:-0.02em}
+.logo-text{display:flex;flex-direction:column;line-height:1.1;min-width:0}
+.logo-title{font-size:17px;font-weight:800;color:var(--text);letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .logo-sub{font-size:10px;font-weight:500;color:var(--text-muted);font-family:var(--font-mono);letter-spacing:0.05em;margin-top:1px}
 
 /* ── Tabs ── */
@@ -49,11 +54,12 @@
 .tab:hover{color:var(--text-dim)}
 .tab.active{color:var(--blue);border-bottom-color:var(--blue)}
 
-/* ── Panel body ── */
-#panel-body{flex:1;overflow-y:auto;display:flex;flex-direction:column}
-#panel-body::-webkit-scrollbar{width:4px}
-#panel-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-.tab-content{display:none;flex-direction:column;flex:1}
+/* ── Panel body ──
+   min-height:0 is the critical fix: without it, a flex child ignores
+   overflow and expands to fit its content, killing scroll.
+*/
+#panel-body{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.tab-content{display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden}
 .tab-content.active{display:flex}
 
 /* ── Search ── */
@@ -84,8 +90,8 @@
 .pill:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-soft)}
 .pill.active{background:var(--blue);border-color:var(--blue);color:#fff}
 
-/* ── Result list ── */
-.result-list{flex:1;overflow-y:auto}
+/* ── Result list — the actual scroll container ── */
+.result-list{flex:1;min-height:0;overflow-y:auto}
 .result-list::-webkit-scrollbar{width:3px}
 .result-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 .result-count{padding:4px 14px;font-size:11px;font-family:var(--font-mono);color:var(--text-muted)}
@@ -130,11 +136,11 @@
 .route-search-btn:disabled{background:var(--border-mid);color:var(--text-muted);cursor:not-allowed}
 
 /* Route airport picker — inline search + results (unified with main list style) */
-.route-picker-panel{display:none;flex-direction:column;flex:1;overflow:hidden}
+.route-picker-panel{display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden}
 .route-picker-panel.visible{display:flex}
 .route-picker-header{padding:4px 14px 2px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);font-family:var(--font-mono);flex-shrink:0}
 
-.route-results{flex:1;overflow-y:auto;display:none}
+.route-results{flex:1;min-height:0;overflow-y:auto;display:none}
 .route-results.visible{display:block}
 
 .route-result-card{margin:8px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s}
