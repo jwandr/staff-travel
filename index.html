@@ -1065,8 +1065,9 @@ function drawRouteOnMap(legs) {
     const fromAp=airports[leg.from],toAp=airports[leg.to]; if(!fromAp||!toAp) return;
     const cls=leg.bestClass||'Y';
     const color=leg.isStaff===false?C.other:(cls==='J'?C.business:C.economy);
-    const pts=unwrapLongitudes(gcPoints(fromAp.lat,fromAp.lon,toAp.lat,toAp.lon,40));
-    L.polyline(pts,{color,weight:2.8,opacity:0.80,dashArray:'7 4',smoothFactor:1}).addTo(routeLayerGroup);
+    splitAtAntimeridian(gcPoints(fromAp.lat,fromAp.lon,toAp.lat,toAp.lon,40)).forEach(seg=>{
+      L.polyline(seg,{color,weight:2.8,opacity:0.80,dashArray:'7 4',smoothFactor:1}).addTo(routeLayerGroup);
+    });
   });
 
   legs.forEach((leg,i)=>{
@@ -1104,8 +1105,9 @@ function addMarker(lat,lon,popupHtml,type='economy'){
 }
 
 function drawRouteColored(lat1,lon1,lat2,lon2,color,opacity,weight){
-  const pts=unwrapLongitudes(gcPoints(lat1,lon1,lat2,lon2,40));
-  L.polyline(pts,{color,weight,opacity,smoothFactor:1}).addTo(routeLayerGroup);
+  splitAtAntimeridian(gcPoints(lat1,lon1,lat2,lon2,40)).forEach(seg=>{
+    L.polyline(seg,{color,weight,opacity,smoothFactor:1}).addTo(routeLayerGroup);
+  });
 }
 
 function gcPoints(lat1,lon1,lat2,lon2,n){
@@ -1124,25 +1126,6 @@ function gcPoints(lat1,lon1,lat2,lon2,n){
   return pts;
 }
 
-/* Unwrap longitudes so consecutive points never jump > 180 degrees.
-   This gives a continuous line across the antimeridian that Leaflet
-   renders correctly with worldCopyJump:true. */
-function unwrapLongitudes(pts){
-  if(pts.length<2) return pts;
-  const out=[[pts[0][0],pts[0][1]]];
-  for(let i=1;i<pts.length;i++){
-    let lon=pts[i][1];
-    const prev=out[i-1][1];
-    let diff=lon-prev;
-    // Normalise diff to [-180,180]
-    while(diff>180)  diff-=360;
-    while(diff<-180) diff+=360;
-    out.push([pts[i][0], prev+diff]);
-  }
-  return out;
-}
-
-/* Keep splitAtAntimeridian for fallback but no longer used by drawRouteColored */
 function splitAtAntimeridian(pts){
   const segs=[[]];
   for(let i=0;i<pts.length;i++){
