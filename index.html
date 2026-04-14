@@ -281,7 +281,13 @@
       select#max-stops-select{padding:2px 5px;font-size:11px}
     }
 
-  </style>
+  
+    /* ── Route search spinner ── */
+    .route-searching{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 16px;gap:12px}
+    .route-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:rtspin 0.7s linear infinite;flex-shrink:0}
+    @keyframes rtspin{to{transform:rotate(360deg)}}
+    .route-spinner-text{font-size:12px;font-family:var(--font-mono);color:var(--text-muted)}
+</style>
 </head>
 <body>
 <div id="app">
@@ -925,13 +931,19 @@ function findRoutes() {
   if(!routeOrigin||!routeDest) return;
   const origin=routeOrigin.iata, dest=routeDest.iata;
   if(origin===dest) return;
-  // Clear previous results immediately
-  document.getElementById('route-results-list').innerHTML='';
-  document.getElementById('route-results-count').textContent='Searching...';
+  // Show spinner immediately, then run BFS after browser paints
   const _rr=document.getElementById('route-results');
   _rr.classList.add('visible');
   _rr.scrollTop=0;
+  document.getElementById('route-results-list').innerHTML=
+    '<div class="route-searching"><div class="route-spinner"></div><span class="route-spinner-text">Searching routes…</span></div>';
+  document.getElementById('route-results-count').textContent='';
   clearLayers();
+  // Defer BFS so spinner renders before the synchronous work starts
+  setTimeout(()=>_findRoutesBFS(origin, dest), 30);
+}
+
+function _findRoutesBFS(origin, dest) {
 
   const maxLegs=getMaxLegs();
   const staffResults=[], otherResults=[], seen=new Set();
@@ -984,7 +996,7 @@ function findRoutes() {
   const sortFn=(a,b)=>{const aT=a.reduce((s,l)=>s+(l.minMin||0),0),bT=b.reduce((s,l)=>s+(l.minMin||0),0);return aT!==bT?aT-bT:a.length-b.length;};
   staffResults.sort(sortFn); otherResults.sort(sortFn);
   renderRouteResults([...staffResults,...otherResults].slice(0,40), origin, dest);
-}
+} // end _findRoutesBFS
 
 function formatDuration(totalMin){
   if(!totalMin||totalMin<1) return '';
