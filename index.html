@@ -40,7 +40,7 @@
    tab-content (min-height:0) → result-list (overflow-y:auto, flex:1).
 */
 /* ── Panel: absolutely fixed width using flex shorthand ── */
-#panel{flex:0 0 var(--panel-w);width:var(--panel-w);height:100%;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;box-shadow:3px 0 16px rgba(0,0,0,0.06)}
+#panel{flex:0 0 var(--panel-w);width:var(--panel-w);max-width:var(--panel-w);height:100%;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;box-shadow:3px 0 16px rgba(0,0,0,0.06)}
 #panel-header{padding:14px 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
 .logo-row{display:flex;align-items:center;gap:10px}
 .logo-img{height:38px;width:auto;max-width:180px;object-fit:contain;display:block}
@@ -83,7 +83,7 @@
 .search-clear:hover{background:var(--border);color:var(--text)}
 
 /* ── Controls ── */
-.controls-wrap{padding:4px 14px 10px;width:100%;display:flex;flex-direction:column;gap:8px}
+.controls-wrap{padding:4px 14px 10px;width:100%;flex-shrink:0;display:flex;flex-direction:column;gap:8px}
 .toggle-row{display:flex;align-items:center;justify-content:space-between}
 .toggle-label{font-size:12px;font-weight:600;color:var(--text-dim);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .toggle-switch{position:relative;width:38px;height:22px}
@@ -104,7 +104,7 @@
 .result-list::-webkit-scrollbar{width:3px}
 .result-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 .result-count{padding:4px 14px;font-size:11px;font-family:var(--font-mono);color:var(--text-muted);flex-shrink:0;width:100%}
-.result-item{padding:10px 14px;cursor:pointer;border-left:3px solid transparent;transition:background 0.12s,border-color 0.12s;display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden}
+.result-item{padding:10px 14px;cursor:pointer;border-left:3px solid transparent;transition:background 0.12s,border-color 0.12s;display:flex;align-items:center;gap:10px;width:100%;min-width:0;overflow:hidden}
 .result-item:hover{background:var(--surface2);border-left-color:var(--blue-mid)}
 .result-item.selected{background:var(--blue-soft);border-left-color:var(--blue)}
 .result-logo{width:44px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg);border:1px solid var(--border);border-radius:5px;overflow:hidden;padding:2px}
@@ -1043,7 +1043,7 @@ function renderRouteResults(routes, origin, dest) {
     }).join('');
 
     const hasNonStaff=legs.some(l=>l.isStaff===false);
-    const nsBadge = hasNonStaff? `<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;margin-left:4px">Non-staff</span>` : '';
+    const nsBadge=hasNonStaff?'<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;margin-left:4px">Non-staff</span>':'';
     card.innerHTML=`
       <div class="route-card-header">
         <span class="route-card-title">${origin} &#8594; ${dest}${nsBadge}</span>
@@ -1073,10 +1073,8 @@ function drawRouteOnMap(legs) {
     const fromAp=airports[leg.from],toAp=airports[leg.to]; if(!fromAp||!toAp) return;
     const cls=leg.bestClass||'Y';
     const color=leg.isStaff===false?C.other:(cls==='J'?C.business:C.economy);
-    const pts=gcPoints(fromAp.lat,fromAp.lon,toAp.lat,toAp.lon,40);
-    splitAtAntimeridian(pts).forEach(seg=>{
-      L.polyline(seg,{color,weight:2.8,opacity:0.80,dashArray:'7 4',smoothFactor:1}).addTo(routeLayerGroup);
-    });
+    const pts=unwrapLongitudes(gcPoints(fromAp.lat,fromAp.lon,toAp.lat,toAp.lon,40));
+    L.polyline(pts,{color,weight:2.8,opacity:0.80,dashArray:'7 4',smoothFactor:1}).addTo(routeLayerGroup);
   });
 
   legs.forEach((leg,i)=>{
@@ -1114,10 +1112,8 @@ function addMarker(lat,lon,popupHtml,type='economy'){
 }
 
 function drawRouteColored(lat1,lon1,lat2,lon2,color,opacity,weight){
-  const pts=gcPoints(lat1,lon1,lat2,lon2,40);
-  splitAtAntimeridian(pts).forEach(seg=>{
-    L.polyline(seg,{color,weight,opacity,smoothFactor:1}).addTo(routeLayerGroup);
-  });
+  const pts=unwrapLongitudes(gcPoints(lat1,lon1,lat2,lon2,40));
+  L.polyline(pts,{color,weight,opacity,smoothFactor:1}).addTo(routeLayerGroup);
 }
 
 function gcPoints(lat1,lon1,lat2,lon2,n){
@@ -1136,6 +1132,25 @@ function gcPoints(lat1,lon1,lat2,lon2,n){
   return pts;
 }
 
+/* Unwrap longitudes so consecutive points never jump > 180 degrees.
+   This gives a continuous line across the antimeridian that Leaflet
+   renders correctly with worldCopyJump:true. */
+function unwrapLongitudes(pts){
+  if(pts.length<2) return pts;
+  const out=[[pts[0][0],pts[0][1]]];
+  for(let i=1;i<pts.length;i++){
+    let lon=pts[i][1];
+    const prev=out[i-1][1];
+    let diff=lon-prev;
+    // Normalise diff to [-180,180]
+    while(diff>180)  diff-=360;
+    while(diff<-180) diff+=360;
+    out.push([pts[i][0], prev+diff]);
+  }
+  return out;
+}
+
+/* Keep splitAtAntimeridian for fallback but no longer used by drawRouteColored */
 function splitAtAntimeridian(pts){
   const segs=[[]];
   for(let i=0;i<pts.length;i++){
