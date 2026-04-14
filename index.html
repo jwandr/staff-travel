@@ -1043,7 +1043,7 @@ function renderRouteResults(routes, origin, dest) {
     }).join('');
 
     const hasNonStaff=legs.some(l=>l.isStaff===false);
-    const nsBadge=hasNonStaff?`<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;margin-left:4px">Non-staff</span>`:\''\';
+    const nsBadge = hasNonStaff? `<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;margin-left:4px">Non-staff</span>` : '';
     card.innerHTML=`
       <div class="route-card-header">
         <span class="route-card-title">${origin} &#8594; ${dest}${nsBadge}</span>
