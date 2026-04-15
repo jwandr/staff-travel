@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
   <style>
     :root {
       --bg:#f0f4f8; --surface:#ffffff; --surface2:#f7f9fb;
@@ -27,6 +28,8 @@
       --font-ui:'Plus Jakarta Sans',sans-serif; --font-mono:'JetBrains Mono',monospace;
       --panel-w:380px; --r:10px; --r-sm:6px;
     }
+    .material-icons-round{font-size:18px;vertical-align:middle;line-height:1}
+    .tab .material-icons-round{font-size:16px}
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:14px}
     #app{display:flex;height:100vh;width:100vw}
@@ -308,9 +311,9 @@
     </div>
 
     <div id="tabs">
-      <button class="tab active" data-tab="airports">&#9992; Airports</button>
-      <button class="tab" data-tab="airlines">&#9671; Airlines</button>
-      <button class="tab" data-tab="routes">&#8644; Routes</button>
+      <button class="tab active" data-tab="airports"><span class="material-icons-round">flight_takeoff</span> Airports</button>
+      <button class="tab" data-tab="airlines"><span class="material-icons-round">airlines</span> Airlines</button>
+      <button class="tab" data-tab="routes"><span class="material-icons-round">route</span> Routes</button>
     </div>
 
     <div id="panel-body">
@@ -324,20 +327,7 @@
             <button class="search-clear" id="airport-search-clear" onclick="clearSearch('airport')" title="Clear">&#10005;</button>
           </div>
         </div>
-        <div class="controls-wrap">
-          <div class="toggle-row">
-            <span class="toggle-label">Show all airlines on map</span>
-            <label class="toggle-switch"><input type="checkbox" id="all-airlines-toggle"/><span class="toggle-slider"></span></label>
-          </div>
-          <div class="filter-row">
-            <span class="filter-row-label">Show routes for class</span>
-            <div class="pills" id="airport-class-pills">
-              <button class="pill active" data-class="all">All</button>
-              <button class="pill" data-class="Y" style="border-color:rgba(14,165,233,0.4);color:#0369a1">Economy</button>
-              <button class="pill" data-class="J" style="border-color:rgba(124,58,237,0.4);color:#5b21b6">Business</button>
-            </div>
-          </div>
-        </div>
+
         <div class="result-count" id="airport-count"></div>
         <div class="result-list" id="airport-list"></div>
       </div>
@@ -353,8 +343,8 @@
         </div>
         <div class="controls-wrap">
           <div class="toggle-row">
-            <span class="toggle-label">Include non-staff airlines</span>
-            <label class="toggle-switch"><input type="checkbox" id="show-all-airlines-toggle"/><span class="toggle-slider"></span></label>
+            <span class="toggle-label">Show only staff airlines</span>
+            <label class="toggle-switch"><input type="checkbox" id="show-all-airlines-toggle" checked/><span class="toggle-slider"></span></label>
           </div>
           <div class="filter-row">
             <span class="filter-row-label">Filter staff airlines by class</span>
@@ -483,7 +473,7 @@
     <button id="clear-btn" onclick="clearSelection()">&#10005; Clear</button>
   </div>
   <!-- Mobile toggle: direct child of #app so it's never hidden with map-wrap -->
-  <button id="mobile-toggle" onclick="toggleMobileView()">&#9993; Map</button>
+  <button id="mobile-toggle" onclick="toggleMobileView()"><span class="material-icons-round" style="font-size:20px">public</span> Map</button>
 </div>
 
 <script>
@@ -521,7 +511,7 @@ let allAirlinesInDataset = {};
 
 let currentSelection = null;
 let airportClassFilter = 'all', airlineClassFilter = 'all', routeClassFilter = 'all';
-let showAllAirlines = false, showAllAirlinesTab = false;
+let showAllAirlines = true, showAllAirlinesTab = false;
 let airportSearch = '', airlineSearch = '';
 let routePickerTarget = null, routeOrigin = null, routeDest = null, routePickerSearch = '';
 let routeShowAllAirlines = false;
@@ -1332,21 +1322,8 @@ document.getElementById('airline-search').addEventListener('input',e=>{
   buildAirlineList();
 });
 
-document.getElementById('all-airlines-toggle').addEventListener('change',e=>{
-  showAllAirlines=e.target.checked;
-  if(currentSelection) redrawCurrentSelection();
-});
-
 document.getElementById('show-all-airlines-toggle').addEventListener('change',e=>{
-  showAllAirlinesTab=e.target.checked; buildAirlineList();
-});
-
-document.querySelectorAll('#airport-class-pills .pill').forEach(pill=>{
-  pill.addEventListener('click',()=>{
-    document.querySelectorAll('#airport-class-pills .pill').forEach(p=>p.classList.remove('active'));
-    pill.classList.add('active'); airportClassFilter=pill.dataset.class;
-    if(currentSelection?.type==='airport') redrawCurrentSelection();
-  });
+  showAllAirlinesTab=!e.target.checked; buildAirlineList();
 });
 
 document.querySelectorAll('#airline-class-pills .pill').forEach(pill=>{
@@ -1402,13 +1379,13 @@ function toggleMobileView(){
   if(mobileMapMode){
     panel.classList.add('map-mode');
     mapWrap.classList.add('map-mode');
-    btn.innerHTML = '&#9776; Panel';
+    btn.innerHTML = '<span class="material-icons-round" style="font-size:20px">menu</span> Panel';
     // Let the browser paint the map container before Leaflet measures it
     setTimeout(()=>{ map.invalidateSize(); }, 80);
   } else {
     panel.classList.remove('map-mode');
     mapWrap.classList.remove('map-mode');
-    btn.innerHTML = '&#9993; Map';
+    btn.innerHTML = '<span class="material-icons-round" style="font-size:20px">public</span> Map';
   }
 }
 
