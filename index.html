@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
@@ -34,268 +35,209 @@
     html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:14px}
     #app{display:flex;height:100vh;width:100vw}
 
-    /* ── Panel ──
-       max-width locks the column to exactly --panel-w regardless of content.
-       The flex column chain must have explicit bounds at every level for
-       overflow/scroll to work: panel → panel-body (min-height:0) →
-       tab-content (min-height:0) → result-list (overflow-y:auto, flex:1).
-    */
-    /* ── Panel: absolutely fixed width using flex shorthand ── */
-    #panel{flex:0 0 var(--panel-w);width:var(--panel-w);max-width:var(--panel-w);height:100%;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;box-shadow:3px 0 16px rgba(0,0,0,0.06)}
-    #panel-header{padding:14px 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
-    .logo-row{display:flex;align-items:center;gap:10px}
-    .logo-img{height:38px;width:auto;max-width:180px;object-fit:contain;display:block}
-    .logo-img-fallback{display:none;width:36px;height:36px;background:var(--blue);border-radius:9px;align-items:center;justify-content:center;flex-shrink:0}
-    .logo-img-fallback svg{width:22px;height:22px;fill:white}
-    .logo-text{display:flex;flex-direction:column;line-height:1.1;min-width:0;overflow:hidden}
-    .logo-title{font-size:17px;font-weight:800;color:var(--text);letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .logo-sub{font-size:10px;font-weight:500;color:var(--text-muted);font-family:var(--font-mono);letter-spacing:0.05em;margin-top:1px}
+```
+#panel{flex:0 0 var(--panel-w);width:var(--panel-w);max-width:var(--panel-w);height:100%;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;box-shadow:3px 0 16px rgba(0,0,0,0.06)}
+#panel-header{padding:14px 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.logo-row{display:flex;align-items:center;gap:10px}
+.logo-img{height:38px;width:auto;max-width:180px;object-fit:contain;display:block}
+.logo-img-fallback{display:none;width:36px;height:36px;background:var(--blue);border-radius:9px;align-items:center;justify-content:center;flex-shrink:0}
+.logo-img-fallback svg{width:22px;height:22px;fill:white}
+.logo-text{display:flex;flex-direction:column;line-height:1.1;min-width:0;overflow:hidden}
+.logo-title{font-size:17px;font-weight:800;color:var(--text);letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.logo-sub{font-size:10px;font-weight:500;color:var(--text-muted);font-family:var(--font-mono);letter-spacing:0.05em;margin-top:1px}
 
-    /* ── Tabs ── */
-    #tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg);padding:0 12px;gap:2px}
-    .tab{flex:1;padding:10px 4px;font-size:12px;font-weight:600;font-family:var(--font-ui);color:var(--text-muted);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:color 0.15s,border-color 0.15s;white-space:nowrap}
-    .tab:hover{color:var(--text-dim)}
-    .tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+#tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg);padding:0 12px;gap:2px}
+.tab{flex:1;padding:10px 4px;font-size:12px;font-weight:600;font-family:var(--font-ui);color:var(--text-muted);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:color 0.15s,border-color 0.15s;white-space:nowrap}
+.tab:hover{color:var(--text-dim)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
 
-    /* ── Panel body: the ONLY scroll container in the panel ──
-       flex:1 1 0 + min-height:0 lets it shrink below content size.
-       overflow-y:auto provides the scroll.
-       overflow-x:hidden stops content blowing the panel wider.
-       position:relative needed for the route picker overlay.
-    ── */
-    /* panel-body: just a flex container, no scrolling here */
-    #panel-body{flex:1 1 0;min-height:0;display:flex;flex-direction:column;overflow:hidden;position:relative}
+#panel-body{flex:1 1 0;min-height:0;display:flex;flex-direction:column;overflow:hidden;position:relative}
 
-    /* Each tab fills panel-body and is itself a flex column scroll container.
-       Fixed children (search, controls) have flex-shrink:0.
-       The result-list gets flex:1 and overflows. */
-    .tab-content{display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden;width:100%}
-    .tab-content.active{display:flex}
+.tab-content{display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden;width:100%}
+.tab-content.active{display:flex}
 
-    /* ── Search ── */
-    .search-wrap{padding:14px 14px 8px;flex-shrink:0;width:100%}
-    .search-label{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;display:block}
-    .search-input-wrap{position:relative;min-width:0;overflow:hidden}
-    .search-input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:9px 60px 9px 11px;font-size:14px;font-family:var(--font-ui);color:var(--text);outline:none;transition:border-color 0.15s,box-shadow 0.15s}
-    .search-input::placeholder{color:var(--text-muted)}
-    .search-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
-    .search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--border-mid);border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;color:var(--text-dim);display:none;align-items:center;justify-content:center;line-height:1}
-    .search-clear.visible{display:flex}
-    .search-clear:hover{background:var(--border);color:var(--text)}
+.search-wrap{padding:14px 14px 8px;flex-shrink:0;width:100%}
+.search-label{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;display:block}
+.search-input-wrap{position:relative;min-width:0;overflow:hidden}
+.search-input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:9px 60px 9px 11px;font-size:14px;font-family:var(--font-ui);color:var(--text);outline:none;transition:border-color 0.15s,box-shadow 0.15s}
+.search-input::placeholder{color:var(--text-muted)}
+.search-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
+.search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--border-mid);border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;color:var(--text-dim);display:none;align-items:center;justify-content:center;line-height:1}
+.search-clear.visible{display:flex}
+.search-clear:hover{background:var(--border);color:var(--text)}
 
-    /* ── Controls ── */
-    .controls-wrap{padding:4px 14px 10px;width:100%;flex-shrink:0;display:flex;flex-direction:column;gap:8px}
-    .toggle-row{display:flex;align-items:center;justify-content:space-between}
-    .toggle-label{font-size:12px;font-weight:600;color:var(--text-dim);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .toggle-switch{position:relative;width:38px;height:22px}
-    .toggle-switch input{opacity:0;width:0;height:0}
-    .toggle-slider{position:absolute;inset:0;background:var(--border-mid);border-radius:22px;cursor:pointer;transition:background 0.2s}
-    .toggle-slider::before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;background:white;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
-    .toggle-switch input:checked+.toggle-slider{background:var(--blue)}
-    .toggle-switch input:checked+.toggle-slider::before{transform:translateX(16px)}
-    .filter-row{display:flex;flex-direction:column;gap:4px}
-    .filter-row-label{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted)}
-    .pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
-    .pill{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--border-mid);color:var(--text-dim);background:var(--surface);cursor:pointer;transition:all 0.15s}
-    .pill:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-soft)}
-    .pill.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.controls-wrap{padding:4px 14px 10px;width:100%;flex-shrink:0;display:flex;flex-direction:column;gap:8px}
+.toggle-row{display:flex;align-items:center;justify-content:space-between}
+.toggle-label{font-size:12px;font-weight:600;color:var(--text-dim);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toggle-switch{position:relative;width:38px;height:22px}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--border-mid);border-radius:22px;cursor:pointer;transition:background 0.2s}
+.toggle-slider::before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;background:white;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
+.toggle-switch input:checked+.toggle-slider{background:var(--blue)}
+.toggle-switch input:checked+.toggle-slider::before{transform:translateX(16px)}
+.filter-row{display:flex;flex-direction:column;gap:4px}
+.filter-row-label{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted)}
+.pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
+.pill{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--border-mid);color:var(--text-dim);background:var(--surface);cursor:pointer;transition:all 0.15s}
+.pill:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-soft)}
+.pill.active{background:var(--blue);border-color:var(--blue);color:#fff}
 
-    /* ── Result list — the scroll container inside each tab ── */
-    .result-list{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;width:100%}
-    .result-list::-webkit-scrollbar{width:3px}
-    .result-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-    .result-count{padding:4px 14px;font-size:11px;font-family:var(--font-mono);color:var(--text-muted);flex-shrink:0;width:100%}
-    .result-item{padding:10px 14px;cursor:pointer;border-left:3px solid transparent;transition:background 0.12s,border-color 0.12s;display:flex;align-items:center;gap:10px;width:100%;min-width:0;overflow:hidden}
-    .result-item:hover{background:var(--surface2);border-left-color:var(--blue-mid)}
-    .result-item.selected{background:var(--blue-soft);border-left-color:var(--blue)}
-    .result-logo{width:44px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg);border:1px solid var(--border);border-radius:5px;overflow:hidden;padding:2px}
-    .result-logo img{max-width:40px;max-height:24px;object-fit:contain;display:block}
-    .result-logo .logo-fallback{font-size:9px;font-weight:700;font-family:var(--font-mono);color:var(--text-muted)}
-    .result-body{flex:1 1 0;min-width:0;overflow:hidden;width:0}
-    .result-code{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--blue)}
-    .result-name{font-size:13px;font-weight:600;color:var(--text);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-    .result-meta{font-size:11px;font-family:var(--font-mono);color:var(--text-muted);margin-top:1px}
-    .result-classes{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
-    /* Staff badge shown on each airline row in the mixed list */
-    .staff-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;text-transform:uppercase;letter-spacing:0.04em}
-    .other-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;text-transform:uppercase;letter-spacing:0.04em}
-    .class-badge{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;font-family:var(--font-ui);text-transform:uppercase}
-    .class-J{background:rgba(124,58,237,0.1);color:#5b21b6;border:1px solid rgba(124,58,237,0.3)}
-    .class-Y{background:rgba(14,165,233,0.1);color:#0369a1;border:1px solid rgba(14,165,233,0.3)}
+.result-list{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;width:100%}
+.result-list::-webkit-scrollbar{width:3px}
+.result-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.result-count{padding:4px 14px;font-size:11px;font-family:var(--font-mono);color:var(--text-muted);flex-shrink:0;width:100%}
+.result-item{padding:10px 14px;cursor:pointer;border-left:3px solid transparent;transition:background 0.12s,border-color 0.12s;display:flex;align-items:center;gap:10px;width:100%;min-width:0;overflow:hidden}
+.result-item:hover{background:var(--surface2);border-left-color:var(--blue-mid)}
+.result-item.selected{background:var(--blue-soft);border-left-color:var(--blue)}
+.result-logo{width:44px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg);border:1px solid var(--border);border-radius:5px;overflow:hidden;padding:2px}
+.result-logo img{max-width:40px;max-height:24px;object-fit:contain;display:block}
+.result-logo .logo-fallback{font-size:9px;font-weight:700;font-family:var(--font-mono);color:var(--text-muted)}
+.result-body{flex:1 1 0;min-width:0;overflow:hidden;width:0}
+.result-code{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--blue)}
+.result-name{font-size:13px;font-weight:600;color:var(--text);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.result-meta{font-size:11px;font-family:var(--font-mono);color:var(--text-muted);margin-top:1px}
+.result-classes{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.staff-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;text-transform:uppercase;letter-spacing:0.04em}
+.other-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;text-transform:uppercase;letter-spacing:0.04em}
+.class-badge{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;font-family:var(--font-ui);text-transform:uppercase}
+.class-J{background:rgba(124,58,237,0.1);color:#5b21b6;border:1px solid rgba(124,58,237,0.3)}
+.class-Y{background:rgba(14,165,233,0.1);color:#0369a1;border:1px solid rgba(14,165,233,0.3)}
 
-    /* ── Route finder ── */
-    .route-finder-wrap{padding:14px;display:flex;flex-direction:column;gap:8px;flex-shrink:0;width:100%}
-    /* Route airport selector — now inline search + list like other tabs */
-    .route-airport-box{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:10px 36px 10px 12px;cursor:pointer;transition:border-color 0.15s;position:relative}
-    .route-airport-box:hover{border-color:var(--blue)}
-    .route-airport-box.active-input{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
-    .route-airport-box.has-value{background:white;border-color:var(--border-mid)}
-    .route-box-label{font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px}
-    .route-box-value{font-size:14px;font-weight:700;color:var(--text)}
-    .route-box-value.placeholder{color:var(--text-muted);font-weight:400}
-    .route-box-sub{font-size:11px;font-family:var(--font-mono);color:var(--text-dim);margin-top:1px}
-    .route-box-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--border);border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;color:var(--text-dim);display:none;align-items:center;justify-content:center}
-    .route-box-clear.visible{display:flex}
-    .route-box-clear:hover{background:var(--border-mid)}
-    .route-swap-btn{display:flex;align-items:center;justify-content:center;background:none;border:1.5px solid var(--border-mid);border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:14px;align-self:center;transition:all 0.15s;color:var(--text-dim)}
-    .route-swap-btn:hover{border-color:var(--blue);color:var(--blue)}
-    .route-options{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .route-max-toggle{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text-dim)}
-    .route-search-btn{background:var(--blue);color:white;border:none;border-radius:var(--r-sm);padding:11px;font-size:14px;font-weight:700;font-family:var(--font-ui);cursor:pointer;transition:background 0.15s;flex:1}
-    .route-search-btn:hover{background:var(--blue-dark)}
-    .route-search-btn:disabled{background:var(--border-mid);color:var(--text-muted);cursor:not-allowed}
+.route-finder-wrap{padding:14px;display:flex;flex-direction:column;gap:8px;flex-shrink:0;width:100%}
+.route-airport-box{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:10px 36px 10px 12px;cursor:pointer;transition:border-color 0.15s;position:relative}
+.route-airport-box:hover{border-color:var(--blue)}
+.route-airport-box.active-input{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
+.route-airport-box.has-value{background:white;border-color:var(--border-mid)}
+.route-box-label{font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px}
+.route-box-value{font-size:14px;font-weight:700;color:var(--text)}
+.route-box-value.placeholder{color:var(--text-muted);font-weight:400}
+.route-box-sub{font-size:11px;font-family:var(--font-mono);color:var(--text-dim);margin-top:1px}
+.route-box-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--border);border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;color:var(--text-dim);display:none;align-items:center;justify-content:center}
+.route-box-clear.visible{display:flex}
+.route-box-clear:hover{background:var(--border-mid)}
+.route-swap-btn{display:flex;align-items:center;justify-content:center;background:none;border:1.5px solid var(--border-mid);border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:14px;align-self:center;transition:all 0.15s;color:var(--text-dim)}
+.route-swap-btn:hover{border-color:var(--blue);color:var(--blue)}
+.route-options{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.route-max-toggle{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text-dim)}
+.route-search-btn{background:var(--blue);color:white;border:none;border-radius:var(--r-sm);padding:11px;font-size:14px;font-weight:700;font-family:var(--font-ui);cursor:pointer;transition:background 0.15s;flex:1}
+.route-search-btn:hover{background:var(--blue-dark)}
+.route-search-btn:disabled{background:var(--border-mid);color:var(--text-muted);cursor:not-allowed}
 
-    /* Route airport picker — full panel overlay slides over everything */
-    .route-picker-panel{display:none;flex-direction:column;position:absolute;top:0;left:0;right:0;bottom:0;z-index:20;background:var(--surface);overflow:hidden}
-    .route-picker-panel.visible{display:flex;flex-direction:column}
-    .route-picker-topbar{display:flex;align-items:center;gap:10px;padding:14px 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
-    .route-picker-back{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:18px;padding:2px 4px;border-radius:4px;line-height:1;flex-shrink:0}
-    .route-picker-back:hover{color:var(--blue);background:var(--blue-soft)}
-    .route-picker-title{font-size:13px;font-weight:700;color:var(--text)}
-    .route-picker-header{padding:4px 14px 2px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);font-family:var(--font-mono);flex-shrink:0}
+.route-picker-panel{display:none;flex-direction:column;position:absolute;top:0;left:0;right:0;bottom:0;z-index:20;background:var(--surface);overflow:hidden}
+.route-picker-panel.visible{display:flex;flex-direction:column}
+.route-picker-topbar{display:flex;align-items:center;gap:10px;padding:14px 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
+.route-picker-back{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:18px;padding:2px 4px;border-radius:4px;line-height:1;flex-shrink:0}
+.route-picker-back:hover{color:var(--blue);background:var(--blue-soft)}
+.route-picker-title{font-size:13px;font-weight:700;color:var(--text)}
+.route-picker-header{padding:4px 14px 2px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);font-family:var(--font-mono);flex-shrink:0}
 
-    .route-results{display:none;flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding-bottom:8px}
-    .route-results.visible{display:block}
+.route-results{display:none;flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding-bottom:8px}
+.route-results.visible{display:block}
 
-    .route-result-card{margin:8px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s}
-    .route-result-card:hover{border-color:var(--col-business);box-shadow:0 2px 10px var(--col-business-soft)}
-    .route-result-card.selected{border-color:var(--col-business);background:var(--col-business-soft)}
-    .route-card-header{padding:9px 12px 7px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
-    .route-card-title{font-size:12px;font-weight:700;color:var(--text)}
-    .route-card-meta{display:flex;align-items:center;gap:6px}
-    .route-card-duration{font-size:11px;font-family:var(--font-mono);color:var(--text-dim);white-space:nowrap}
-    .route-card-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap}
-    .badge-direct{background:#d1fae5;color:#065f46;border:1px solid #6ee7b7}
-    .badge-1stop{background:rgba(14,165,233,0.12);color:#0369a1;border:1px solid rgba(14,165,233,0.35)}
-    .badge-2stop{background:rgba(124,58,237,0.1);color:#5b21b6;border:1px solid rgba(124,58,237,0.3)}
-    .badge-3stop{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
-    .route-card-legs{padding:8px 12px;overflow:hidden}
-    .route-card-leg{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px;min-width:0;overflow:hidden}
-    .route-leg-left{display:flex;align-items:center;gap:5px;min-width:0;flex:0 0 120px;max-width:120px;overflow:hidden}
-    .route-leg-logo{width:26px;height:17px;object-fit:contain;flex-shrink:0}
-    .route-leg-name{font-size:11px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px}
-    .route-leg-route{font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--text);white-space:nowrap}
-    .route-leg-arrow{color:var(--text-muted);font-size:10px;flex-shrink:0}
-    .route-leg-dur{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);white-space:nowrap;margin-left:auto}
-    .route-leg-class{font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
-    .route-no-results{padding:24px 14px;text-align:center;color:var(--text-muted);font-size:13px;line-height:1.6}
+.route-result-card{margin:8px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s}
+.route-result-card:hover{border-color:var(--col-business);box-shadow:0 2px 10px var(--col-business-soft)}
+.route-result-card.selected{border-color:var(--col-business);background:var(--col-business-soft)}
+.route-card-header{padding:9px 12px 7px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.route-card-title{font-size:12px;font-weight:700;color:var(--text)}
+.route-card-meta{display:flex;align-items:center;gap:6px}
+.route-card-duration{font-size:11px;font-family:var(--font-mono);color:var(--text-dim);white-space:nowrap}
+.route-card-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.badge-direct{background:#d1fae5;color:#065f46;border:1px solid #6ee7b7}
+.badge-1stop{background:rgba(14,165,233,0.12);color:#0369a1;border:1px solid rgba(14,165,233,0.35)}
+.badge-2stop{background:rgba(124,58,237,0.1);color:#5b21b6;border:1px solid rgba(124,58,237,0.3)}
+.badge-3stop{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+.route-card-legs{padding:8px 12px;overflow:hidden}
+.route-card-leg{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px;min-width:0;overflow:hidden}
+.route-leg-left{display:flex;align-items:center;gap:5px;min-width:0;flex:0 0 120px;max-width:120px;overflow:hidden}
+.route-leg-logo{width:26px;height:17px;object-fit:contain;flex-shrink:0}
+.route-leg-name{font-size:11px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px}
+.route-leg-route{font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--text);white-space:nowrap}
+.route-leg-arrow{color:var(--text-muted);font-size:10px;flex-shrink:0}
+.route-leg-dur{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);white-space:nowrap;margin-left:auto}
+.route-leg-class{font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
+.route-no-results{padding:24px 14px;text-align:center;color:var(--text-muted);font-size:13px;line-height:1.6}
 
-    /* ── Info panel — now a map overlay, top-right of map ── */
-    #info-panel{position:absolute;top:12px;right:12px;z-index:500;background:rgba(255,255,255,0.96);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;min-width:200px;max-width:260px;box-shadow:0 2px 12px rgba(0,0,0,0.1);display:none}
-    #info-panel.visible{display:block}
-    .info-title{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px}
-    .info-name{font-size:14px;font-weight:700;color:var(--text);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .info-code{font-family:var(--font-mono);font-size:10px;color:var(--blue);margin:1px 0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .info-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px}
-    .info-stat-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:6px 8px}
-    .info-stat-label{font-size:9px;font-weight:700;color:var(--text-muted);letter-spacing:0.05em;text-transform:uppercase}
-    .info-stat-val{font-size:18px;font-weight:800;color:var(--blue);font-family:var(--font-mono);margin-top:1px;line-height:1}
+#info-panel{position:absolute;top:12px;right:12px;z-index:500;background:rgba(255,255,255,0.96);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;min-width:200px;max-width:260px;box-shadow:0 2px 12px rgba(0,0,0,0.1);display:none}
+#info-panel.visible{display:block}
+.info-title{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px}
+.info-name{font-size:14px;font-weight:700;color:var(--text);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.info-code{font-family:var(--font-mono);font-size:10px;color:var(--blue);margin:1px 0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.info-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px}
+.info-stat-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:6px 8px}
+.info-stat-label{font-size:9px;font-weight:700;color:var(--text-muted);letter-spacing:0.05em;text-transform:uppercase}
+.info-stat-val{font-size:18px;font-weight:800;color:var(--blue);font-family:var(--font-mono);margin-top:1px;line-height:1}
 
-    /* ── Map ── */
-    #map-wrap{flex:1;position:relative;overflow:hidden}
-    #map{width:100%;height:100%}
-    .leaflet-container{background:#e8eef5}
-    #map-status{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.95);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:12px;font-family:var(--font-mono);color:var(--text-dim);z-index:500;white-space:nowrap;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+#map-wrap{flex:1;position:relative;overflow:hidden}
+#map{width:100%;height:100%}
+.leaflet-container{background:#e8eef5}
+#map-status{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.95);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:12px;font-family:var(--font-mono);color:var(--text-dim);z-index:500;white-space:nowrap;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
 
-    /* ── Loading ── */
-    #loading-overlay{position:absolute;inset:0;background:#f0f4f8;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000;transition:opacity 0.4s}
-    #loading-overlay.hidden{opacity:0;pointer-events:none}
-    .loading-mark{width:52px;height:52px;background:var(--blue);border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;animation:pulse 1.5s ease-in-out infinite}
-    .loading-mark svg{width:28px;height:28px;fill:white}
-    @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(0.94);opacity:0.8}}
-    .loading-text{font-size:15px;font-weight:700;color:var(--text)}
-    .loading-sub{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-top:6px}
-    .loading-bar-wrap{width:200px;height:3px;background:var(--border);border-radius:2px;margin-top:18px;overflow:hidden}
-    .loading-bar{height:100%;background:var(--blue);border-radius:2px;width:0%;transition:width 0.3s}
+#loading-overlay{position:absolute;inset:0;background:#f0f4f8;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000;transition:opacity 0.4s}
+#loading-overlay.hidden{opacity:0;pointer-events:none}
+.loading-mark{width:52px;height:52px;background:var(--blue);border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;animation:pulse 1.5s ease-in-out infinite}
+.loading-mark svg{width:28px;height:28px;fill:white}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(0.94);opacity:0.8}}
+.loading-text{font-size:15px;font-weight:700;color:var(--text)}
+.loading-sub{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-top:6px}
+.loading-bar-wrap{width:200px;height:3px;background:var(--border);border-radius:2px;margin-top:18px;overflow:hidden}
+.loading-bar{height:100%;background:var(--blue);border-radius:2px;width:0%;transition:width 0.3s}
 
-    /* ── Buttons ── */
-    #clear-btn{position:absolute;bottom:20px;right:20px;z-index:500;background:white;border:1.5px solid var(--border-mid);border-radius:20px;padding:7px 18px;font-size:13px;font-weight:600;font-family:var(--font-ui);color:var(--text-dim);cursor:pointer;transition:all 0.15s;display:none;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
-    #clear-btn:hover{border-color:var(--blue);color:var(--blue)}
-    #clear-btn.visible{display:block}
+#clear-btn{position:absolute;bottom:20px;right:20px;z-index:500;background:white;border:1.5px solid var(--border-mid);border-radius:20px;padding:7px 18px;font-size:13px;font-weight:600;font-family:var(--font-ui);color:var(--text-dim);cursor:pointer;transition:all 0.15s;display:none;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+#clear-btn:hover{border-color:var(--blue);color:var(--blue)}
+#clear-btn.visible{display:block}
 
-    /* ── Legend ── */
-    #legend{position:absolute;bottom:20px;left:20px;z-index:500;background:rgba(255,255,255,0.96);border:1px solid var(--border);border-radius:var(--r);padding:11px 14px;font-size:12px;color:var(--text-dim);box-shadow:0 2px 8px rgba(0,0,0,0.08)}
-    .legend-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:8px}
-    .legend-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
-    .legend-row:last-child{margin-bottom:0}
-    .legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.25)}
-    .legend-line{width:24px;height:2.5px;flex-shrink:0;border-radius:2px}
+#legend{position:absolute;bottom:20px;left:20px;z-index:500;background:rgba(255,255,255,0.96);border:1px solid var(--border);border-radius:var(--r);padding:11px 14px;font-size:12px;color:var(--text-dim);box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+.legend-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:8px}
+.legend-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.legend-row:last-child{margin-bottom:0}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.25)}
+.legend-line{width:24px;height:2.5px;flex-shrink:0;border-radius:2px}
 
-    /* ── Markers ── */
-    .ap-marker{border-radius:50%;border:2.5px solid white;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
-    .ap-hub{width:14px;height:14px;background:var(--blue);box-shadow:0 2px 8px rgba(26,107,250,0.55)}
-    .ap-economy{width:12px;height:12px;background:var(--col-economy);box-shadow:0 1px 5px rgba(14,165,233,0.5)}
-    .ap-business{width:12px;height:12px;background:var(--col-business);box-shadow:0 1px 5px rgba(124,58,237,0.5)}
-    .ap-other{width:12px;height:12px;background:var(--col-other);box-shadow:0 1px 5px rgba(232,101,10,0.45)}
-    .ap-route{width:14px;height:14px;background:var(--col-business);box-shadow:0 2px 8px rgba(124,58,237,0.55)}
-    .ap-waypoint{width:11px;height:11px;background:#6d28d9;box-shadow:0 1px 4px rgba(109,40,217,0.4)}
+.ap-marker{border-radius:50%;border:2.5px solid white;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+.ap-hub{width:14px;height:14px;background:var(--blue);box-shadow:0 2px 8px rgba(26,107,250,0.55)}
+.ap-economy{width:12px;height:12px;background:var(--col-economy);box-shadow:0 1px 5px rgba(14,165,233,0.5)}
+.ap-business{width:12px;height:12px;background:var(--col-business);box-shadow:0 1px 5px rgba(124,58,237,0.5)}
+.ap-other{width:12px;height:12px;background:var(--col-other);box-shadow:0 1px 5px rgba(232,101,10,0.45)}
+.ap-route{width:14px;height:14px;background:var(--col-business);box-shadow:0 2px 8px rgba(124,58,237,0.55)}
+.ap-waypoint{width:11px;height:11px;background:#6d28d9;box-shadow:0 1px 4px rgba(109,40,217,0.4)}
 
-    /* ── Error ── */
-    #error-banner{display:none;position:absolute;top:56px;left:50%;transform:translateX(-50%);background:#fff1f2;border:1px solid #fca5a5;border-radius:var(--r-sm);padding:8px 16px;font-size:12px;color:#991b1b;z-index:600;max-width:440px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
-    #error-banner.visible{display:block}
-    #route-picker-airports{flex:1 1 0;min-height:0;overflow-y:auto;overflow-x:hidden}
-    *{scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+#error-banner{display:none;position:absolute;top:56px;left:50%;transform:translateX(-50%);background:#fff1f2;border:1px solid #fca5a5;border-radius:var(--r-sm);padding:8px 16px;font-size:12px;color:#991b1b;z-index:600;max-width:440px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+#error-banner.visible{display:block}
+#route-picker-airports{flex:1 1 0;min-height:0;overflow-y:auto;overflow-x:hidden}
+*{scrollbar-width:thin;scrollbar-color:var(--border) transparent}
 
-    /* ══ MOBILE (≤ 767px) ══════════════════════════════════════
-       Two modes: panel mode (default) and map mode.
-       The toggle button is always fixed on screen regardless of mode.
-    ══════════════════════════════════════════════════════════ */
-    #mobile-toggle{display:none}
+#mobile-toggle{display:none}
 
-    @media (max-width:767px){
-      /* App stacks vertically; each child fills the full screen */
-      #app{flex-direction:column;position:relative}
+@media (max-width:767px){
+  #app{flex-direction:column;position:relative}
+  #panel{flex:1 1 0;width:100%;max-width:100%;height:100%;min-height:0;border-right:none;border-bottom:none;}
+  #map-wrap{display:none;flex:1 1 0;min-height:0;height:100%}
+  #panel.map-mode{display:none}
+  #map-wrap.map-mode{display:flex;flex-direction:column}
+  #mobile-toggle{display:flex;align-items:center;gap:6px;position:fixed;bottom:20px;right:20px;z-index:9999;background:var(--blue);color:white;border:none;border-radius:24px;padding:11px 20px;font-size:14px;font-weight:700;font-family:var(--font-ui);cursor:pointer;box-shadow:0 4px 20px rgba(26,107,250,0.45);-webkit-tap-highlight-color:transparent;}
+  #clear-btn{bottom:76px}
+  .route-finder-wrap{padding:10px;gap:5px}
+  .route-airport-box{padding:7px 34px 7px 10px}
+  .route-box-value{font-size:13px}
+  .route-box-label{font-size:9px;margin-bottom:1px}
+  .route-box-sub{font-size:10px}
+  .route-swap-btn{width:26px;height:26px;font-size:12px}
+  .route-options{gap:6px}
+  .route-search-btn{padding:9px}
+  select#max-stops-select{padding:2px 5px;font-size:11px}
+}
 
-      /* Panel mode (default): panel fills screen, map hidden */
-      #panel{
-        flex:1 1 0;width:100%;max-width:100%;
-        height:100%;min-height:0;
-        border-right:none;border-bottom:none;
-      }
-      #map-wrap{display:none;flex:1 1 0;min-height:0;height:100%}
+.route-searching{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 16px;gap:12px}
+.route-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:rtspin 0.7s linear infinite;flex-shrink:0}
+@keyframes rtspin{to{transform:rotate(360deg)}}
+.route-spinner-text{font-size:12px;font-family:var(--font-mono);color:var(--text-muted)}
 
-      /* Map mode: map fills screen, panel hidden */
-      #panel.map-mode{display:none}
-      #map-wrap.map-mode{display:flex;flex-direction:column}
+.route-via-row{position:relative}
+.route-via-box{border-style:dashed !important;background:var(--surface2) !important}
+.route-via-box.has-value{background:white !important;border-style:solid !important}
+.route-via-box:before{content:'';position:absolute;left:50%;top:-6px;transform:translateX(-50%);width:1px;height:6px;background:var(--border)}
+```
 
-      /* Toggle button — always fixed to viewport, never inside a hidden parent */
-      #mobile-toggle{
-        display:flex;align-items:center;gap:6px;
-        position:fixed;bottom:20px;right:20px;
-        z-index:9999;
-        background:var(--blue);color:white;
-        border:none;border-radius:24px;
-        padding:11px 20px;font-size:14px;font-weight:700;
-        font-family:var(--font-ui);cursor:pointer;
-        box-shadow:0 4px 20px rgba(26,107,250,0.45);
-        -webkit-tap-highlight-color:transparent;
-      }
-      /* Clear button sits above the toggle */
-      #clear-btn{bottom:76px}
-      /* Routes tab: compact controls on mobile */
-      .route-finder-wrap{padding:10px;gap:5px}
-      .route-airport-box{padding:7px 34px 7px 10px}
-      .route-box-value{font-size:13px}
-      .route-box-label{font-size:9px;margin-bottom:1px}
-      .route-box-sub{font-size:10px}
-      .route-swap-btn{width:26px;height:26px;font-size:12px}
-      .route-options{gap:6px}
-      .route-search-btn{padding:9px}
-      select#max-stops-select{padding:2px 5px;font-size:11px}
-    }
-
-  
-    /* ── Route search spinner ── */
-    .route-searching{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 16px;gap:12px}
-    .route-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:rtspin 0.7s linear infinite;flex-shrink:0}
-    @keyframes rtspin{to{transform:rotate(360deg)}}
-    .route-spinner-text{font-size:12px;font-family:var(--font-mono);color:var(--text-muted)}
-
-    /* ── Via row ── */
-    .route-via-row{position:relative}
-    .route-via-box{border-style:dashed !important;background:var(--surface2) !important}
-    .route-via-box.has-value{background:white !important;border-style:solid !important}
-    .route-via-box:before{content:'';position:absolute;left:50%;top:-6px;transform:translateX(-50%);width:1px;height:6px;background:var(--border)}
 </style>
 </head>
 <body>
@@ -303,7 +245,6 @@
   <div id="panel">
     <div id="panel-header">
       <div class="logo-row">
-        <!-- Custom logo: references file in repo root. Falls back to SVG if missing -->
         <img class="logo-img" src="./standy-departures-logo-colour.png" alt="Standby Departures"
              onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'"/>
         <div class="logo-img-fallback" id="logo-fallback">
@@ -316,137 +257,133 @@
       </div>
     </div>
 
-    <div id="tabs">
-      <button class="tab active" data-tab="airports"><span class="material-icons-round">flight_takeoff</span> Airports</button>
-      <button class="tab" data-tab="airlines"><span class="material-icons-round">airlines</span> Airlines</button>
-      <button class="tab" data-tab="routes"><span class="material-icons-round">route</span> Routes</button>
+```
+<div id="tabs">
+  <button class="tab active" data-tab="airports"><span class="material-icons-round">flight_takeoff</span> Airports</button>
+  <button class="tab" data-tab="airlines"><span class="material-icons-round">airlines</span> Airlines</button>
+  <button class="tab" data-tab="routes"><span class="material-icons-round">route</span> Routes</button>
+</div>
+
+<div id="panel-body">
+
+  <!-- ══ AIRPORTS TAB ══ -->
+  <div id="tab-airports" class="tab-content active">
+    <div class="search-wrap">
+      <span class="search-label">Search airport</span>
+      <div class="search-input-wrap">
+        <input class="search-input" id="airport-search" type="text" placeholder="Name, city or IATA code..." autocomplete="off"/>
+        <button class="search-clear" id="airport-search-clear" onclick="clearSearch('airport')" title="Clear">&#10005;</button>
+      </div>
     </div>
 
-    <div id="panel-body">
+    <div class="result-count" id="airport-count"></div>
+    <div class="result-list" id="airport-list"></div>
+  </div>
 
-      <!-- ══ AIRPORTS TAB ══ -->
-      <div id="tab-airports" class="tab-content active">
-        <div class="search-wrap">
-          <span class="search-label">Search airport</span>
-          <div class="search-input-wrap">
-            <input class="search-input" id="airport-search" type="text" placeholder="Name, city or IATA code..." autocomplete="off"/>
-            <button class="search-clear" id="airport-search-clear" onclick="clearSearch('airport')" title="Clear">&#10005;</button>
-          </div>
-        </div>
-
-        <div class="result-count" id="airport-count"></div>
-        <div class="result-list" id="airport-list"></div>
+  <!-- ══ AIRLINES TAB ══ -->
+  <div id="tab-airlines" class="tab-content">
+    <div class="search-wrap">
+      <span class="search-label">Search airline</span>
+      <div class="search-input-wrap">
+        <input class="search-input" id="airline-search" type="text" placeholder="Airline name or IATA code..." autocomplete="off"/>
+        <button class="search-clear" id="airline-search-clear" onclick="clearSearch('airline')" title="Clear">&#10005;</button>
       </div>
-
-      <!-- ══ AIRLINES TAB ══ -->
-      <div id="tab-airlines" class="tab-content">
-        <div class="search-wrap">
-          <span class="search-label">Search airline</span>
-          <div class="search-input-wrap">
-            <input class="search-input" id="airline-search" type="text" placeholder="Airline name or IATA code..." autocomplete="off"/>
-            <button class="search-clear" id="airline-search-clear" onclick="clearSearch('airline')" title="Clear">&#10005;</button>
-          </div>
-        </div>
-        <div class="controls-wrap">
-          <div class="toggle-row">
-            <span class="toggle-label">Show only staff airlines</span>
-            <label class="toggle-switch"><input type="checkbox" id="show-all-airlines-toggle" checked/><span class="toggle-slider"></span></label>
-          </div>
-          <div class="filter-row">
-            <span class="filter-row-label">Filter staff airlines by class</span>
-            <div class="pills" id="airline-class-pills">
-              <button class="pill active" data-class="all">All</button>
-              <button class="pill" data-class="Y" style="border-color:rgba(14,165,233,0.4);color:#0369a1">Economy</button>
-              <button class="pill" data-class="J" style="border-color:rgba(124,58,237,0.4);color:#5b21b6">Business</button>
-            </div>
-          </div>
-        </div>
-        <div class="result-count" id="airline-count"></div>
-        <div class="result-list" id="airline-list"></div>
+    </div>
+    <div class="controls-wrap">
+      <div class="toggle-row">
+        <span class="toggle-label">Show only staff airlines</span>
+        <label class="toggle-switch"><input type="checkbox" id="show-all-airlines-toggle" checked/><span class="toggle-slider"></span></label>
       </div>
-
-      <!-- ══ ROUTES TAB ══ -->
-      <div id="tab-routes" class="tab-content" style="position:relative">
-        <!-- Controls always visible at top -->
-        <div class="route-finder-wrap">
-          <!-- From airport -->
-          <div class="route-airport-box" id="route-origin-box" onclick="activateRoutePicker('origin')">
-            <div class="route-box-label">From</div>
-            <div class="route-box-value placeholder" id="route-origin-val">Select departure airport</div>
-            <div class="route-box-sub" id="route-origin-sub" style="display:none"></div>
-            <button class="route-box-clear" id="route-origin-clear" onclick="clearRouteEnd(event,'origin')">&#10005;</button>
-          </div>
-          <button class="route-swap-btn" onclick="swapRouteAirports()">&#8645;</button>
-          <!-- To airport -->
-          <div class="route-airport-box" id="route-dest-box" onclick="activateRoutePicker('dest')">
-            <div class="route-box-label">To</div>
-            <div class="route-box-value placeholder" id="route-dest-val">Select arrival airport</div>
-            <div class="route-box-sub" id="route-dest-sub" style="display:none"></div>
-            <button class="route-box-clear" id="route-dest-clear" onclick="clearRouteEnd(event,'dest')">&#10005;</button>
-          </div>
-          <!-- Via airport (optional) -->
-          <div class="route-via-row">
-            <div class="route-airport-box route-via-box" id="route-via-box" onclick="activateRoutePicker('via')">
-              <div class="route-box-label">Via <span style="font-weight:400;opacity:0.7">(optional)</span></div>
-              <div class="route-box-value placeholder" id="route-via-val">Add a required stopover</div>
-              <div class="route-box-sub" id="route-via-sub" style="display:none"></div>
-              <button class="route-box-clear" id="route-via-clear" onclick="clearRouteEnd(event,'via')">&#10005;</button>
-            </div>
-          </div>
-          <div class="controls-wrap" style="padding:0">
-            <div class="filter-row">
-              <span class="filter-row-label">Filter by class</span>
-              <div class="pills" id="route-class-pills">
-                <button class="pill active" data-class="all">All</button>
-                <button class="pill" data-class="Y" style="border-color:rgba(14,165,233,0.4);color:#0369a1">Economy</button>
-                <button class="pill" data-class="J" style="border-color:rgba(124,58,237,0.4);color:#5b21b6">Business</button>
-              </div>
-            </div>
-          </div>
-          <div class="controls-wrap" style="padding:0;margin-top:2px">
-            <div class="toggle-row">
-              <span class="toggle-label">Include non-staff airlines</span>
-              <label class="toggle-switch"><input type="checkbox" id="route-all-airlines-toggle"/><span class="toggle-slider"></span></label>
-            </div>
-          </div>
-          <div class="route-options">
-            <div class="route-max-toggle">
-              <span>Max stops:</span>
-              <select id="max-stops-select" style="border:1.5px solid var(--border-mid);border-radius:5px;padding:3px 6px;font-size:12px;font-family:var(--font-ui);color:var(--text);background:var(--surface);cursor:pointer">
-                <option value="1">Direct only</option>
-                <option value="2">1 stop</option>
-                <option value="3" selected>2 stops</option>
-                <option value="4">3 stops</option>
-              </select>
-            </div>
-            <button class="route-search-btn" id="route-search-btn" disabled onclick="findRoutes()">Find Routes</button>
-          </div>
-        </div>
-
-        <!-- Airport picker — full-panel overlay, slides over routes controls -->
-        <div class="route-picker-panel" id="route-picker-panel">
-          <div class="route-picker-topbar">
-            <button class="route-picker-back" onclick="cancelRoutePicker()" title="Back">&#8592;</button>
-            <span class="route-picker-title" id="route-picker-header">Select departure airport</span>
-          </div>
-          <div class="search-wrap" style="padding-top:10px;padding-bottom:4px">
-            <div class="search-input-wrap">
-              <input class="search-input" id="route-picker-search" type="text" placeholder="Search airports..." autocomplete="off"/>
-              <button class="search-clear" id="route-picker-clear" onclick="clearRoutePickerSearch()" title="Clear">&#10005;</button>
-            </div>
-          </div>
-          <div class="result-count" id="route-picker-count"></div>
-          <div class="result-list" id="route-picker-airports"></div>
-        </div>
-
-        <!-- Route results -->
-        <div class="route-results" id="route-results">
-          <div class="result-count" id="route-results-count"></div>
-          <div id="route-results-list"></div>
+      <div class="filter-row">
+        <span class="filter-row-label">Filter staff airlines by class</span>
+        <div class="pills" id="airline-class-pills">
+          <button class="pill active" data-class="all">All</button>
+          <button class="pill" data-class="Y" style="border-color:rgba(14,165,233,0.4);color:#0369a1">Economy</button>
+          <button class="pill" data-class="J" style="border-color:rgba(124,58,237,0.4);color:#5b21b6">Business</button>
         </div>
       </div>
+    </div>
+    <div class="result-count" id="airline-count"></div>
+    <div class="result-list" id="airline-list"></div>
+  </div>
 
-    </div><!-- /panel-body -->
+  <!-- ══ ROUTES TAB ══ -->
+  <div id="tab-routes" class="tab-content" style="position:relative">
+    <div class="route-finder-wrap">
+      <div class="route-airport-box" id="route-origin-box" onclick="activateRoutePicker('origin')">
+        <div class="route-box-label">From</div>
+        <div class="route-box-value placeholder" id="route-origin-val">Select departure airport</div>
+        <div class="route-box-sub" id="route-origin-sub" style="display:none"></div>
+        <button class="route-box-clear" id="route-origin-clear" onclick="clearRouteEnd(event,'origin')">&#10005;</button>
+      </div>
+      <button class="route-swap-btn" onclick="swapRouteAirports()">&#8645;</button>
+      <div class="route-airport-box" id="route-dest-box" onclick="activateRoutePicker('dest')">
+        <div class="route-box-label">To</div>
+        <div class="route-box-value placeholder" id="route-dest-val">Select arrival airport</div>
+        <div class="route-box-sub" id="route-dest-sub" style="display:none"></div>
+        <button class="route-box-clear" id="route-dest-clear" onclick="clearRouteEnd(event,'dest')">&#10005;</button>
+      </div>
+      <div class="route-via-row">
+        <div class="route-airport-box route-via-box" id="route-via-box" onclick="activateRoutePicker('via')">
+          <div class="route-box-label">Via <span style="font-weight:400;opacity:0.7">(optional)</span></div>
+          <div class="route-box-value placeholder" id="route-via-val">Add a required stopover</div>
+          <div class="route-box-sub" id="route-via-sub" style="display:none"></div>
+          <button class="route-box-clear" id="route-via-clear" onclick="clearRouteEnd(event,'via')">&#10005;</button>
+        </div>
+      </div>
+      <div class="controls-wrap" style="padding:0">
+        <div class="filter-row">
+          <span class="filter-row-label">Filter by class</span>
+          <div class="pills" id="route-class-pills">
+            <button class="pill active" data-class="all">All</button>
+            <button class="pill" data-class="Y" style="border-color:rgba(14,165,233,0.4);color:#0369a1">Economy</button>
+            <button class="pill" data-class="J" style="border-color:rgba(124,58,237,0.4);color:#5b21b6">Business</button>
+          </div>
+        </div>
+      </div>
+      <div class="controls-wrap" style="padding:0;margin-top:2px">
+        <div class="toggle-row">
+          <span class="toggle-label">Include non-staff airlines</span>
+          <label class="toggle-switch"><input type="checkbox" id="route-all-airlines-toggle"/><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+      <div class="route-options">
+        <div class="route-max-toggle">
+          <span>Max stops:</span>
+          <select id="max-stops-select" style="border:1.5px solid var(--border-mid);border-radius:5px;padding:3px 6px;font-size:12px;font-family:var(--font-ui);color:var(--text);background:var(--surface);cursor:pointer">
+            <option value="1">Direct only</option>
+            <option value="2">1 stop</option>
+            <option value="3" selected>2 stops</option>
+            <option value="4">3 stops</option>
+          </select>
+        </div>
+        <button class="route-search-btn" id="route-search-btn" disabled onclick="findRoutes()">Find Routes</button>
+      </div>
+    </div>
+
+    <div class="route-picker-panel" id="route-picker-panel">
+      <div class="route-picker-topbar">
+        <button class="route-picker-back" onclick="cancelRoutePicker()" title="Back">&#8592;</button>
+        <span class="route-picker-title" id="route-picker-header">Select departure airport</span>
+      </div>
+      <div class="search-wrap" style="padding-top:10px;padding-bottom:4px">
+        <div class="search-input-wrap">
+          <input class="search-input" id="route-picker-search" type="text" placeholder="Search airports..." autocomplete="off"/>
+          <button class="search-clear" id="route-picker-clear" onclick="clearRoutePickerSearch()" title="Clear">&#10005;</button>
+        </div>
+      </div>
+      <div class="result-count" id="route-picker-count"></div>
+      <div class="result-list" id="route-picker-airports"></div>
+    </div>
+
+    <div class="route-results" id="route-results">
+      <div class="result-count" id="route-results-count"></div>
+      <div id="route-results-list"></div>
+    </div>
+  </div>
+
+</div><!-- /panel-body -->
+```
 
   </div><!-- /panel -->
 
@@ -464,7 +401,6 @@
       <div class="loading-bar-wrap"><div class="loading-bar" id="loading-bar"></div></div>
     </div>
     <div id="error-banner"></div>
-    <!-- Selection info overlay — top right of map -->
     <div id="info-panel">
       <div class="info-title" id="info-type-label">Selected</div>
       <div class="info-name" id="info-name"></div>
@@ -475,19 +411,21 @@
       </div>
     </div>
 
-    <div id="legend">
-      <div class="legend-title">Legend</div>
-      <div class="legend-row"><div class="legend-dot" style="background:var(--blue)"></div><span>Origin / hub</span></div>
-      <div class="legend-row"><div class="legend-dot" style="background:var(--col-economy)"></div><span>Economy destination</span></div>
-      <div class="legend-row"><div class="legend-dot" style="background:var(--col-business)"></div><span>Business destination</span></div>
-      <div class="legend-row"><div class="legend-dot" style="background:var(--col-other)"></div><span>Non-staff destination</span></div>
-      <div class="legend-row"><div class="legend-line" style="background:var(--col-economy)"></div><span>Economy route</span></div>
-      <div class="legend-row"><div class="legend-line" style="background:var(--col-business)"></div><span>Business route</span></div>
-      <div class="legend-row"><div class="legend-line" style="background:var(--col-other)"></div><span>Non-staff route</span></div>
-    </div>
-    <button id="clear-btn" onclick="clearSelection()">&#10005; Clear</button>
+```
+<div id="legend">
+  <div class="legend-title">Legend</div>
+  <div class="legend-row"><div class="legend-dot" style="background:var(--blue)"></div><span>Origin / hub</span></div>
+  <div class="legend-row"><div class="legend-dot" style="background:var(--col-economy)"></div><span>Economy destination</span></div>
+  <div class="legend-row"><div class="legend-dot" style="background:var(--col-business)"></div><span>Business destination</span></div>
+  <div class="legend-row"><div class="legend-dot" style="background:var(--col-other)"></div><span>Non-staff destination</span></div>
+  <div class="legend-row"><div class="legend-line" style="background:var(--col-economy)"></div><span>Economy route</span></div>
+  <div class="legend-row"><div class="legend-line" style="background:var(--col-business)"></div><span>Business route</span></div>
+  <div class="legend-row"><div class="legend-line" style="background:var(--col-other)"></div><span>Non-staff route</span></div>
+</div>
+<button id="clear-btn" onclick="clearSelection()">&#10005; Clear</button>
+```
+
   </div>
-  <!-- Mobile toggle: direct child of #app so it's never hidden with map-wrap -->
   <button id="mobile-toggle" onclick="toggleMobileView()"><span class="material-icons-round" style="font-size:20px">public</span> Map</button>
 </div>
 
@@ -719,14 +657,13 @@ function buildAirportList() {
 }
 
 /* ================================================================
-   AIRLINE LIST — alphabetical, staff + other mixed, with clear visual badges
+   AIRLINE LIST
 ================================================================ */
 function buildAirlineList() {
   const query=airlineSearch.toLowerCase().trim();
   const list=document.getElementById('airline-list'), count=document.getElementById('airline-count');
   list.innerHTML='';
 
-  // Staff airlines (possibly filtered by class)
   let staffItems=permittedAirlines
     .filter(a=>{
       if(query&&!a.iata_code.toLowerCase().includes(query)&&!a.airline_name.toLowerCase().includes(query)) return false;
@@ -734,7 +671,6 @@ function buildAirlineList() {
       return (a.permitted_classes||[]).includes(airlineClassFilter);
     });
 
-  // Non-staff airlines (only when toggle on)
   let otherItems=[];
   if(showAllAirlinesTab){
     otherItems=Object.entries(allAirlinesInDataset)
@@ -746,7 +682,6 @@ function buildAirlineList() {
       .map(([code,al])=>({code,name:al.name,count:al.count,isStaff:false}));
   }
 
-  // Merge and sort alphabetically
   const staffMapped=staffItems.map(a=>({code:a.iata_code,name:a.airline_name,al:a,isStaff:true}));
   const merged=[...staffMapped,...otherItems].sort((a,b)=>a.name.localeCompare(b.name));
 
@@ -936,7 +871,6 @@ function findRoutes() {
   if(!routeOrigin||!routeDest) return;
   const origin=routeOrigin.iata, dest=routeDest.iata;
   if(origin===dest) return;
-  // Show spinner immediately, then run BFS after browser paints
   const _rr=document.getElementById('route-results');
   _rr.classList.add('visible');
   _rr.scrollTop=0;
@@ -944,7 +878,6 @@ function findRoutes() {
     '<div class="route-searching"><div class="route-spinner"></div><span class="route-spinner-text">Searching routes…</span></div>';
   document.getElementById('route-results-count').textContent='';
   clearLayers();
-  // Defer BFS so spinner renders before the synchronous work starts
   setTimeout(()=>_findRoutesBFS(origin, dest), 30);
 }
 
@@ -973,7 +906,7 @@ function _findRoutesBFS(origin, dest) {
     return permittedAirlines.some(al=>info.airlines.includes(al.airline_name)&&(al.permitted_classes||[]).includes(routeClassFilter));
   }
 
-  /* Run BFS from `start` to `end`, return all paths up to maxLegs legs */
+  /* Run BFS from `start` to `end`, return all paths up to legBudget legs */
   function runBFS(start, end, legBudget) {
     const staffR=[], otherR=[], seen=new Set();
     function bfs(path, visited) {
@@ -1013,16 +946,24 @@ function _findRoutesBFS(origin, dest) {
 
   } else {
     /* ── Via: BFS origin→via PLUS BFS via→dest, then stitch ──
-       Split the leg budget roughly evenly between the two halves.
-       We try all combinations of (leg1, leg2) and keep valid ones. */
-    const half = Math.ceil(maxLegs / 2);
-    const r1 = runBFS(origin, via, half);      // origin → via
-    const r2 = runBFS(via, dest, maxLegs-1);   // via → dest (at least 1 leg each side)
+       
+       FIX: Each half gets (maxLegs - 1) as its budget, NOT Math.ceil(maxLegs/2).
+       
+       The old code used Math.ceil(maxLegs/2) which, for maxLegs=4 ("3 stops"),
+       gave each half a budget of only 2 legs. But MAN→FRA→MCT already needs
+       2 legs in the first half — and runBFS stops when path.length >= legBudget,
+       so a budget of 2 means only 1-leg paths ever complete. The fix gives each
+       half the full (maxLegs-1) budget; the combination check below
+       (p1.length + p2.length > maxLegs) correctly enforces the overall limit.
+    */
+    const halfBudget = maxLegs - 1;
+    const r1 = runBFS(origin, via, halfBudget);   // origin → via
+    const r2 = runBFS(via, dest, halfBudget);     // via → dest
 
     staffResults = []; otherResults = [];
 
-    // Combine every path from leg1 with every path from leg2
-    // Reject if combined length > maxLegs or if any airport is visited twice
+    // Combine every path from r1 with every path from r2.
+    // Reject if combined length exceeds maxLegs or if any airport is visited twice.
     [...r1.staffR, ...r1.otherR].forEach(p1=>{
       [...r2.staffR, ...r2.otherR].forEach(p2=>{
         if (p1.length + p2.length > maxLegs) return;
@@ -1204,7 +1145,7 @@ function fitToPoints(oLat,oLon,iataSet){
 }
 
 /* ================================================================
-   ROUTE PICKER — integrated search+list (same pattern as airports)
+   ROUTE PICKER
 ================================================================ */
 function activateRoutePicker(target){
   routePickerTarget=target;
@@ -1275,7 +1216,6 @@ function setRouteAirport(target,iata,ap){
   document.getElementById('route-dest-box').classList.remove('active-input');
   routePickerTarget=null;
   document.getElementById('route-search-btn').disabled=!(routeOrigin&&routeDest);
-  // If both are set, auto-focus the Find Routes button
   if(routeOrigin&&routeDest) document.getElementById('route-search-btn').focus();
 }
 
@@ -1429,8 +1369,6 @@ _s.textContent=`
 `;
 document.head.appendChild(_s);
 
-
-
 /* ── Mobile view toggle ── */
 let mobileMapMode = false;
 function toggleMobileView(){
@@ -1442,7 +1380,6 @@ function toggleMobileView(){
     panel.classList.add('map-mode');
     mapWrap.classList.add('map-mode');
     btn.innerHTML = '<span class="material-icons-round" style="font-size:20px">menu</span> Panel';
-    // Let the browser paint the map container before Leaflet measures it
     setTimeout(()=>{ map.invalidateSize(); }, 80);
   } else {
     panel.classList.remove('map-mode');
@@ -1453,5 +1390,6 @@ function toggleMobileView(){
 
 init();
 </script>
+
 </body>
 </html>
