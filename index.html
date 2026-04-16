@@ -290,6 +290,12 @@
     .route-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:rtspin 0.7s linear infinite;flex-shrink:0}
     @keyframes rtspin{to{transform:rotate(360deg)}}
     .route-spinner-text{font-size:12px;font-family:var(--font-mono);color:var(--text-muted)}
+
+    /* ── Via row ── */
+    .route-via-row{position:relative}
+    .route-via-box{border-style:dashed !important;background:var(--surface2) !important}
+    .route-via-box.has-value{background:white !important;border-style:solid !important}
+    .route-via-box:before{content:'';position:absolute;left:50%;top:-6px;transform:translateX(-50%);width:1px;height:6px;background:var(--border)}
 </style>
 </head>
 <body>
@@ -377,6 +383,15 @@
             <div class="route-box-value placeholder" id="route-dest-val">Select arrival airport</div>
             <div class="route-box-sub" id="route-dest-sub" style="display:none"></div>
             <button class="route-box-clear" id="route-dest-clear" onclick="clearRouteEnd(event,'dest')">&#10005;</button>
+          </div>
+          <!-- Via airport (optional) -->
+          <div class="route-via-row">
+            <div class="route-airport-box route-via-box" id="route-via-box" onclick="activateRoutePicker('via')">
+              <div class="route-box-label">Via <span style="font-weight:400;opacity:0.7">(optional)</span></div>
+              <div class="route-box-value placeholder" id="route-via-val">Add a required stopover</div>
+              <div class="route-box-sub" id="route-via-sub" style="display:none"></div>
+              <button class="route-box-clear" id="route-via-clear" onclick="clearRouteEnd(event,'via')">&#10005;</button>
+            </div>
           </div>
           <div class="controls-wrap" style="padding:0">
             <div class="filter-row">
@@ -513,7 +528,7 @@ let currentSelection = null;
 let airportClassFilter = 'all', airlineClassFilter = 'all', routeClassFilter = 'all';
 let showAllAirlines = true, showAllAirlinesTab = false;
 let airportSearch = '', airlineSearch = '';
-let routePickerTarget = null, routeOrigin = null, routeDest = null, routePickerSearch = '';
+let routePickerTarget = null, routeOrigin = null, routeDest = null, routeVia = null, routePickerSearch = '';
 let routeShowAllAirlines = false;
 let map, routeLayerGroup, markerLayerGroup;
 
@@ -934,6 +949,7 @@ function findRoutes() {
 }
 
 function _findRoutesBFS(origin, dest) {
+  const via = routeVia ? routeVia.iata : null;
 
   const maxLegs=getMaxLegs();
   const staffResults=[], otherResults=[], seen=new Set();
@@ -956,6 +972,8 @@ function _findRoutesBFS(origin, dest) {
   function bfs(path, visited) {
     const last=path[path.length-1].to;
     if(last===dest){
+      // If via is required, only keep paths that include it
+      if(via && !path.some(l=>l.from===via||l.to===via)){return;}
       path.every(l=>l.isStaff!==false)?staffResults.push([...path]):otherResults.push([...path]);
       return;
     }
@@ -1005,7 +1023,8 @@ function renderRouteResults(routes, origin, dest) {
     listEl.innerHTML=`<div class="route-no-results">No staff travel routes found between ${origin} and ${dest}.<br/>Try increasing max stops or check airline coverage.</div>`;
     clearLayers(); return;
   }
-  countEl.textContent=`${routes.length} staff route${routes.length>1?'s':''} - sorted by flight time`;
+  const viaLabel=routeVia?` via ${routeVia.iata}`:'';
+  countEl.textContent=`${routes.length} route${routes.length>1?'s':''} found${viaLabel} - sorted by flight time`;
 
   routes.forEach((legs,idx)=>{
     const stops=legs.length-1;
@@ -1154,7 +1173,7 @@ function activateRoutePicker(target){
   document.getElementById('route-picker-search').value='';
   document.getElementById('route-picker-clear').classList.remove('visible');
   document.getElementById('route-picker-header').textContent=
-    target==='origin'?'Select departure airport':'Select arrival airport';
+    target==='origin'?'Select departure airport':target==='dest'?'Select arrival airport':'Select stopover airport';
   document.getElementById('route-picker-panel').classList.add('visible');
   document.getElementById('route-origin-box').classList.toggle('active-input',target==='origin');
   document.getElementById('route-dest-box').classList.toggle('active-input',target==='dest');
@@ -1206,7 +1225,9 @@ function setRouteAirport(target,iata,ap){
   const sEl=document.getElementById(`route-${target}-sub`);
   const cEl=document.getElementById(`route-${target}-clear`);
   const bEl=document.getElementById(`route-${target}-box`);
-  if(target==='origin') routeOrigin={iata,ap}; else routeDest={iata,ap};
+  if(target==='origin') routeOrigin={iata,ap};
+  else if(target==='dest') routeDest={iata,ap};
+  else routeVia={iata,ap};
   vEl.textContent=`${iata} - ${ap.name}`; vEl.classList.remove('placeholder');
   sEl.textContent=`${ap.city}, ${ap.country}`; sEl.style.display='block';
   cEl.classList.add('visible'); bEl.classList.add('has-value');
@@ -1221,9 +1242,11 @@ function setRouteAirport(target,iata,ap){
 
 function clearRouteEnd(e,target){
   e.stopPropagation();
-  if(target==='origin') routeOrigin=null; else routeDest=null;
+  if(target==='origin') routeOrigin=null;
+  else if(target==='dest') routeDest=null;
+  else routeVia=null;
   const vEl=document.getElementById(`route-${target}-val`);
-  vEl.textContent=target==='origin'?'Select departure airport':'Select arrival airport';
+  vEl.textContent=target==='origin'?'Select departure airport':target==='dest'?'Select arrival airport':'Add a required stopover';
   vEl.classList.add('placeholder');
   document.getElementById(`route-${target}-sub`).style.display='none';
   document.getElementById(`route-${target}-clear`).classList.remove('visible');
