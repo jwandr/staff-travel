@@ -950,58 +950,97 @@ function findRoutes() {
 
 function _findRoutesBFS(origin, dest) {
   const via = routeVia ? routeVia.iata : null;
+  const maxLegs = getMaxLegs();
 
-  const maxLegs=getMaxLegs();
-  const staffResults=[], otherResults=[], seen=new Set();
-
-  function getAdj(iata){
-    const adj={};
+  /* Build adjacency list honouring the non-staff toggle and class filter */
+  function getAdj(iata) {
+    const adj = {};
     Object.entries(staffAdj[iata]||{}).forEach(([to,info])=>{ adj[to]={...info,isStaff:true}; });
-    if(routeShowAllAirlines){
+    if (routeShowAllAirlines) {
       Object.entries(allAirportRoutes[iata]||{}).forEach(([to,carriers])=>{
-        if(adj[to]) return;
-        const ns=carriers.filter(c=>!permittedMap[c.iata]);
-        if(!ns.length) return;
-        const rd=routeData[iata]; const rr=rd&&Array.isArray(rd.routes)?rd.routes.find(r=>r.iata===to):null;
+        if (adj[to]) return;
+        const ns = carriers.filter(c=>!permittedMap[c.iata]);
+        if (!ns.length) return;
+        const rd=routeData[iata], rr=rd&&Array.isArray(rd.routes)?rd.routes.find(r=>r.iata===to):null;
         adj[to]={airlines:[...new Set(ns.map(c=>c.name||c.iata))],bestClass:'Y',minKm:rr?.km||0,minMin:rr?.min||0,isStaff:false};
       });
     }
     return adj;
   }
 
-  function bfs(path, visited) {
-    const last=path[path.length-1].to;
-    if(last===dest){
-      // If via is required, only keep paths that include it
-      if(via && !path.some(l=>l.from===via||l.to===via)){return;}
-      path.every(l=>l.isStaff!==false)?staffResults.push([...path]):otherResults.push([...path]);
-      return;
-    }
-    if(path.length>=maxLegs) return;
-    Object.entries(getAdj(last)).forEach(([next,info])=>{
-      if(visited.has(next)) return;
-      if(routeClassFilter!=='all'&&info.isStaff){
-        const ok=permittedAirlines.some(al=>info.airlines.includes(al.airline_name)&&(al.permitted_classes||[]).includes(routeClassFilter));
-        if(!ok) return;
+  function classOk(info) {
+    if (routeClassFilter==='all'||!info.isStaff) return true;
+    return permittedAirlines.some(al=>info.airlines.includes(al.airline_name)&&(al.permitted_classes||[]).includes(routeClassFilter));
+  }
+
+  /* Run BFS from `start` to `end`, return all paths up to maxLegs legs */
+  function runBFS(start, end, legBudget) {
+    const staffR=[], otherR=[], seen=new Set();
+    function bfs(path, visited) {
+      const last = path[path.length-1].to;
+      if (last===end) {
+        path.every(l=>l.isStaff!==false) ? staffR.push([...path]) : otherR.push([...path]);
+        return;
       }
-      const key=path.map(l=>l.from+'>'+l.to).join('|')+'|'+last+'>'+next;
-      if(seen.has(key)) return; seen.add(key);
-      bfs([...path,{from:last,to:next,...info}],new Set([...visited,next]));
+      if (path.length>=legBudget) return;
+      Object.entries(getAdj(last)).forEach(([next,info])=>{
+        if (visited.has(next)||!classOk(info)) return;
+        const key=path.map(l=>l.from+'>'+l.to).join('|')+'|'+last+'>'+next;
+        if (seen.has(key)) return; seen.add(key);
+        bfs([...path,{from:last,to:next,...info}], new Set([...visited,next]));
+      });
+    }
+    Object.entries(getAdj(start)).forEach(([next,info])=>{
+      if (next===start||!classOk(info)) return;
+      const key=`${start}>${next}`;
+      if (seen.has(key)) return; seen.add(key);
+      bfs([{from:start,to:next,...info}], new Set([start,next]));
+    });
+    return {staffR, otherR};
+  }
+
+  const sortFn = (a,b)=>{
+    const aT=a.reduce((s,l)=>s+(l.minMin||0),0), bT=b.reduce((s,l)=>s+(l.minMin||0),0);
+    return aT!==bT ? aT-bT : a.length-b.length;
+  };
+
+  let staffResults, otherResults;
+
+  if (!via) {
+    /* ── No via: simple single BFS origin→dest ── */
+    const r = runBFS(origin, dest, maxLegs);
+    staffResults = r.staffR; otherResults = r.otherR;
+
+  } else {
+    /* ── Via: BFS origin→via PLUS BFS via→dest, then stitch ──
+       Split the leg budget roughly evenly between the two halves.
+       We try all combinations of (leg1, leg2) and keep valid ones. */
+    const half = Math.ceil(maxLegs / 2);
+    const r1 = runBFS(origin, via, half);      // origin → via
+    const r2 = runBFS(via, dest, maxLegs-1);   // via → dest (at least 1 leg each side)
+
+    staffResults = []; otherResults = [];
+
+    // Combine every path from leg1 with every path from leg2
+    // Reject if combined length > maxLegs or if any airport is visited twice
+    [...r1.staffR, ...r1.otherR].forEach(p1=>{
+      [...r2.staffR, ...r2.otherR].forEach(p2=>{
+        if (p1.length + p2.length > maxLegs) return;
+        // Check no airport visited twice across both halves
+        const visited = new Set([origin]);
+        let ok = true;
+        for (const leg of [...p1,...p2]) {
+          if (visited.has(leg.to)) { ok=false; break; }
+          visited.add(leg.to);
+        }
+        if (!ok) return;
+        const combined = [...p1, ...p2];
+        const allStaff = combined.every(l=>l.isStaff!==false);
+        allStaff ? staffResults.push(combined) : otherResults.push(combined);
+      });
     });
   }
 
-  Object.entries(getAdj(origin)).forEach(([next,info])=>{
-    if(next===origin) return;
-    if(routeClassFilter!=='all'&&info.isStaff){
-      const ok=permittedAirlines.some(al=>info.airlines.includes(al.airline_name)&&(al.permitted_classes||[]).includes(routeClassFilter));
-      if(!ok) return;
-    }
-    const key=`${origin}>${next}`;
-    if(seen.has(key)) return; seen.add(key);
-    bfs([{from:origin,to:next,...info}],new Set([origin,next]));
-  });
-
-  const sortFn=(a,b)=>{const aT=a.reduce((s,l)=>s+(l.minMin||0),0),bT=b.reduce((s,l)=>s+(l.minMin||0),0);return aT!==bT?aT-bT:a.length-b.length;};
   staffResults.sort(sortFn); otherResults.sort(sortFn);
   renderRouteResults([...staffResults,...otherResults].slice(0,40), origin, dest);
 } // end _findRoutesBFS
